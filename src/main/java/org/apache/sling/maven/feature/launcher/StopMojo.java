@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
@@ -66,6 +67,8 @@ public class StopMojo extends AbstractMojo {
     protected void waitForInput() throws MojoFailureException {
         // http://stackoverflow.com/a/21977269/5155923
         try {
+            String message = MessageUtils.buffer().warning("Waiting for user input before build continues...").toString();
+            getLog().warn(message);
             prompter.prompt("Press Enter to continue");
         } catch (PrompterException e) {
             throw new MojoFailureException("Could not prompt for user input. Maven is probably running in non-interactive mode! Do not use parameter 'shouldBlockUntilKeyIsPressed' in that case", e);
