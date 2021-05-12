@@ -20,6 +20,7 @@ package org.apache.sling.maven.feature.launcher;
 
 import java.util.List;
 
+import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -49,10 +50,17 @@ public class StopMojo extends AbstractMojo {
     @Component
     private Prompter prompter;
 
+    @Parameter(defaultValue = "${session.request}", readonly = true)
+    private MavenExecutionRequest executionRequest;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (waitForInput) {
-            waitForInput();
+            if (executionRequest.isInteractiveMode()) {
+                waitForInput();
+            } else {
+                getLog().warn("Don't wait for user input as Maven is not running in interactive mode");
+            }
         }
         try {
             for ( Launch launch : launches ) {
@@ -71,7 +79,7 @@ public class StopMojo extends AbstractMojo {
             getLog().warn(message);
             prompter.prompt("Press Enter to continue");
         } catch (PrompterException e) {
-            throw new MojoFailureException("Could not prompt for user input. Maven is probably running in non-interactive mode! Do not use parameter 'shouldBlockUntilKeyIsPressed' in that case", e);
+            throw new MojoFailureException("Could not prompt for user input. Do not use parameter 'waitForInput' in that case", e);
         }
     }
 }
