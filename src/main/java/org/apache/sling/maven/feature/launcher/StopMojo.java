@@ -57,7 +57,7 @@ public class StopMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (waitForInput) {
             if (executionRequest.isInteractiveMode()) {
-                waitForInput();
+                waitForUserInput();
             } else {
                 getLog().warn("Don't wait for user input as Maven is not running in interactive mode");
             }
@@ -72,7 +72,7 @@ public class StopMojo extends AbstractMojo {
         }
     }
 
-    protected void waitForInput() throws MojoFailureException {
+    protected void waitForUserInput() throws MojoFailureException {
         // http://stackoverflow.com/a/21977269/5155923
         try {
             String message = MessageUtils.buffer().warning("Waiting for user input before build continues...").toString();
