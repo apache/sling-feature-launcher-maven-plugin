@@ -19,6 +19,10 @@ Configure the plugin as follows:
         <launches>
             <launch>
                 <id>model</id>
+                <!-- optionally uncomment to skip this launch if the skip property resolves to false -->
+                <!--
+                <skip>${prop1.skip}</skip>
+                -->
                 <feature>
                     <groupId>org.apache.sling</groupId>
                     <artifactId>org.apache.sling.starter</artifactId>
