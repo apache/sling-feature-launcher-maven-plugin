@@ -64,6 +64,11 @@ public class StopMojo extends AbstractMojo {
         }
         try {
             for ( Launch launch : launches ) {
+                if (launch.isSkip()) {
+                    getLog().info("Skipping stopping launch with id " + launch.getId());
+                    continue; // skip it
+                }
+
                 getLog().info("Stopping launch with id " + launch.getId());
                 processes.stop(launch.getId());
             }

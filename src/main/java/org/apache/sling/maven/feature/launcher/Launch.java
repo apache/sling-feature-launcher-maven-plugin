@@ -30,6 +30,7 @@ public class Launch {
     private Dependency feature;
     private LauncherArguments launcherArguments;
     private int startTimeoutSeconds = 30;
+    private boolean skip = false;
 
     public String getId() {
         return id;
@@ -61,6 +62,14 @@ public class Launch {
     
     public void setStartTimeoutSeconds(int startTimeoutSeconds) {
         this.startTimeoutSeconds = startTimeoutSeconds;
+    }
+
+    public boolean isSkip() {
+        return skip;
+    }
+
+    public void setSkip(boolean skip) {
+        this.skip = skip;
     }
 
     public void validate() {

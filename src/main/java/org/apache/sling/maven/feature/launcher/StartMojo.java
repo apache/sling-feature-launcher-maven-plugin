@@ -108,6 +108,11 @@ public class StartMojo extends AbstractMojo {
             workDir.mkdirs();
             
             for ( Launch launch : launches ) {
+                if (launch.isSkip()) {
+                    getLog().info("Skipping starting launch with id " + launch.getId());
+                    continue; // skip it
+                }
+
                 launch.validate();
 
                 Artifact artifact = toArtifact(launch.getFeature());
