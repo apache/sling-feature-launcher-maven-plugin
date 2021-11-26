@@ -74,9 +74,12 @@ public class StartMojo extends AbstractMojo {
     //        </framweworkProperties>
     //        ...
     //     </launcherArguments>
-    //     <environment>
+    //     <environmentVariables>
     //        <JAVA_HOME>...</JAVA_HOME>
-    //     </environment>
+    //     </environmentVariables>
+
+    @Parameter
+    private Map<String, String> environmentVariables;
 
     @Component
     private ArtifactResolver resolver;
@@ -159,6 +162,8 @@ public class StartMojo extends AbstractMojo {
                 pb.redirectOutput(Redirect.INHERIT);
                 pb.redirectInput(Redirect.INHERIT);
                 pb.directory(workDir);
+                launch.getEnvironmentVariables().entrySet()
+                    .forEach( e -> pb.environment().put(e.getKey(), e.getValue()) );
                 
                 getLog().info("Starting launch with id '" + launch.getId() + "', args=" + args);
                 

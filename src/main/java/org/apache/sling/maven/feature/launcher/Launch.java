@@ -18,6 +18,9 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.maven.model.Dependency;
@@ -31,6 +34,7 @@ public class Launch {
     private LauncherArguments launcherArguments;
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
+    private Map<String,String> environmentVariables = new HashMap<>();
 
     public String getId() {
         return id;
@@ -70,6 +74,16 @@ public class Launch {
 
     public void setSkip(boolean skip) {
         this.skip = skip;
+    }
+
+    public Map<String, String> getEnvironmentVariables() {
+        if ( environmentVariables == null )
+            return Collections.emptyMap();
+        return environmentVariables;
+    }
+
+    public void setEnvironmentVariables(Map<String, String> environmentVariables) {
+        this.environmentVariables = environmentVariables;
     }
 
     public void validate() {
