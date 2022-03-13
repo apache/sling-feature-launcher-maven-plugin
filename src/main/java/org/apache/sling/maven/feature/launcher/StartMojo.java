@@ -244,7 +244,10 @@ public class StartMojo extends AbstractMojo {
                 pb.redirectInput(Redirect.INHERIT);
                 pb.directory(workDir);
                 launch.getEnvironmentVariables().entrySet()
-                    .forEach( e -> pb.environment().put(e.getKey(), e.getValue()) );
+                    .forEach( e -> {
+                            getLog().info("Setting environment variable '" + e.getKey() + "' to '" + e.getValue() + "'");
+                            pb.environment().put(e.getKey(), e.getValue());
+                        } );
                 
                 getLog().info("Starting launch with id '" + launch.getId() + "', args=" + args);
                 

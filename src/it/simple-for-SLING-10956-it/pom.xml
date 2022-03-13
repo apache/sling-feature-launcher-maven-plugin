@@ -15,7 +15,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.apache.sling</groupId>
-    <artifactId>simple-it</artifactId>
+    <artifactId>simple-for-SLING-10956-it</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <description>A simple IT verifying starting and stopping.</description>
@@ -101,13 +101,13 @@
                 <artifactId>@project.artifactId@</artifactId>
                 <version>@project.version@</version>
                 <configuration>
-                    <featureLauncherVersion>1.1.26</featureLauncherVersion>
+                    <featureLauncherVersion>1.2.0</featureLauncherVersion>
                     <launches>
                         <launch>
                             <id>model</id>
                             <feature>
                                 <groupId>org.apache.sling</groupId>
-                                <artifactId>simple-it</artifactId>
+                                <artifactId>simple-for-SLING-10956-it</artifactId>
                                 <version>1.0-SNAPSHOT</version>
                                 <classifier>main</classifier>
                                 <type>slingosgifeature</type>
