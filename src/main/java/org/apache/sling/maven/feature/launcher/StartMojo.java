@@ -24,12 +24,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
@@ -40,6 +46,10 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.utils.Os;
+import org.codehaus.plexus.archiver.UnArchiver;
+import org.codehaus.plexus.archiver.manager.ArchiverManager;
+import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -51,7 +61,9 @@ import org.eclipse.aether.resolution.ArtifactResult;
 
 @Mojo( name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST )
 public class StartMojo extends AbstractMojo {
-    
+
+    private static final String JAVA_OPTS = "JAVA_OPTS";
+
     /**
      * Location of the file.
      */
@@ -95,20 +107,55 @@ public class StartMojo extends AbstractMojo {
     
     @Component
     private ProcessTracker processes;
-    
+
+    /**
+     * To look up UnArchiver implementations
+     */
+    @Component
+    private ArchiverManager archiverManager;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        Artifact launcherArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:" + featureLauncherVersion);
-
         try {
+            // the feature launcher before version 1.1.28 used a single jar, while versions
+            //  after that provide an assembly per SLING-10956
+            VersionRange beforeAssemblyRange = VersionRange.createFromVersionSpec("(,1.1.26]");
+            boolean useAssembly = !beforeAssemblyRange.containsVersion(new DefaultArtifactVersion(featureLauncherVersion));
+
             RepositorySystemSession repositorySession = mavenSession.getRepositorySession();
-            File launcher = resolver
-                .resolveArtifact(repositorySession, new ArtifactRequest(launcherArtifact, remoteRepos, null))
-                .getArtifact()
-                .getFile();
-            
             File workDir = new File(outputDirectory, "launchers");
             workDir.mkdirs();
+
+            File launcher;
+            if (useAssembly) {
+                // fetch the assembly artifact
+                Artifact launcherAssemblyArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:tar.gz:" + featureLauncherVersion);
+                File assemblyArchive = resolver
+                        .resolveArtifact(repositorySession, new ArtifactRequest(launcherAssemblyArtifact, remoteRepos, null))
+                        .getArtifact()
+                        .getFile();
+
+                // unpack the file
+                UnArchiver unArchiver = archiverManager.getUnArchiver( assemblyArchive );
+                unArchiver.setSourceFile(assemblyArchive);
+                unArchiver.setDestFile(workDir);
+                unArchiver.extract();
+
+                // system property
+                Path relPath = Paths.get(launcherAssemblyArtifact.getArtifactId() + "-" + launcherAssemblyArtifact.getVersion(), "bin");
+                if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                    relPath = relPath.resolve("launcher.bat");
+                } else {
+                    relPath = relPath.resolve("launcher");
+                }
+                launcher = workDir.toPath().resolve(relPath).toFile();
+            } else {
+                Artifact launcherArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:" + featureLauncherVersion);
+                launcher = resolver
+                        .resolveArtifact(repositorySession, new ArtifactRequest(launcherArtifact, remoteRepos, null))
+                        .getArtifact()
+                        .getFile();
+            }
             
             for ( Launch launch : launches ) {
                 if (launch.isSkip()) {
@@ -124,24 +171,58 @@ public class StartMojo extends AbstractMojo {
                 File featureFile = result.getArtifact().getFile();
                 
                 List<String> args = new ArrayList<>();
-                String javahome = System.getenv("JAVA_HOME");
-                if (javahome == null || javahome.isEmpty()) {
-                    // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
-                    getLog().warn("The JAVA_HOME env variable was not set, falling back to the java.home system property");
-                    javahome = System.getProperty("java.home");
-                }
-                args.add(javahome + File.separatorChar + "bin" + File.separatorChar + "java");
-                // SLING-9994 - if any extra vm options were supplied, apply them here
-                String[] vmOptions = launch.getLauncherArguments().getVmOptions();
-                if (vmOptions != null) {
-                    for (String vmOption : vmOptions) {
-                        if (vmOption != null && !vmOption.isEmpty()) {
-                            args.add(vmOption);
+                if (useAssembly) {
+                    // use the post v1.1.28 launcher script
+
+                    // SLING-9994 - if any extra vm options were supplied, apply them here
+                    StringBuilder javaOptsBuilder = null;
+                    String[] vmOptions = launch.getLauncherArguments().getVmOptions();
+                    if (vmOptions != null) {
+                        for (String vmOption : vmOptions) {
+                            if (vmOption != null && !vmOption.isEmpty()) {
+                                if (javaOptsBuilder == null) {
+                                    javaOptsBuilder = new StringBuilder();
+                                } else {
+                                    javaOptsBuilder.append(" ");
+                                }
+                                javaOptsBuilder.append(vmOption);
+                            }
                         }
                     }
+                    if (javaOptsBuilder != null) {
+                        // pass vmOptions through JAVA_OPTS environment variable?
+                        Map<String, String> newEnv = new HashMap<>(launch.getEnvironmentVariables());
+                        if (newEnv.containsKey(JAVA_OPTS)) {
+                            // if the original value existed append it to our buffer
+                            javaOptsBuilder.append(" ").append(newEnv.get(JAVA_OPTS));
+                        }
+                        newEnv.put(JAVA_OPTS, javaOptsBuilder.toString());
+                        launch.setEnvironmentVariables(newEnv);
+                    }
+
+                    args.add(launcher.getAbsolutePath());
+                } else {
+                    // use the pre v1.1.28 single jar technique
+
+                    String javahome = System.getenv("JAVA_HOME");
+                    if (javahome == null || javahome.isEmpty()) {
+                        // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
+                        getLog().warn("The JAVA_HOME env variable was not set, falling back to the java.home system property");
+                        javahome = System.getProperty("java.home");
+                    }
+                    args.add(javahome + File.separatorChar + "bin" + File.separatorChar + "java");
+                    // SLING-9994 - if any extra vm options were supplied, apply them here
+                    String[] vmOptions = launch.getLauncherArguments().getVmOptions();
+                    if (vmOptions != null) {
+                        for (String vmOption : vmOptions) {
+                            if (vmOption != null && !vmOption.isEmpty()) {
+                                args.add(vmOption);
+                            }
+                        }
+                    }
+                    args.add("-jar");
+                    args.add(launcher.getAbsolutePath());
                 }
-                args.add("-jar");
-                args.add(launcher.getAbsolutePath());
                 args.add("-f");
                 args.add(featureFile.getAbsolutePath());
                 args.add("-p");
@@ -200,7 +281,7 @@ public class StartMojo extends AbstractMojo {
                 processes.startTracking(launch.getId(), process);
             }
 
-        } catch (ArtifactResolutionException | IOException e) {
+        } catch (NoSuchArchiverException | InvalidVersionSpecificationException | ArtifactResolutionException | IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
