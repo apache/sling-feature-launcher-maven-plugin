@@ -101,6 +101,8 @@
                 <artifactId>@project.artifactId@</artifactId>
                 <version>@project.version@</version>
                 <configuration>
+                    <!-- pin this at the 1.1.26 version to test launching 
+                         using the pre SLING-10956 technique -->
                     <featureLauncherVersion>1.1.26</featureLauncherVersion>
                     <launches>
                         <launch>

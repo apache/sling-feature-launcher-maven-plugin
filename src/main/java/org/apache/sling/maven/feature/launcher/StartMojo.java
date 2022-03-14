@@ -62,6 +62,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 @Mojo( name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST )
 public class StartMojo extends AbstractMojo {
 
+    private static final String JAVA_HOME = "JAVA_HOME";
     private static final String JAVA_OPTS = "JAVA_OPTS";
 
     /**
@@ -169,10 +170,19 @@ public class StartMojo extends AbstractMojo {
                 
                 ArtifactResult result = resolver.resolveArtifact(repositorySession, new ArtifactRequest(artifact, remoteRepos, null));
                 File featureFile = result.getArtifact().getFile();
-                
+
+                String javahome = System.getenv(JAVA_HOME);
+                if (javahome == null || javahome.isEmpty()) {
+                    // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
+                    getLog().warn("The JAVA_HOME env variable was not set, falling back to the java.home system property");
+                    javahome = System.getProperty("java.home");
+                }
                 List<String> args = new ArrayList<>();
                 if (useAssembly) {
                     // use the post v1.1.28 launcher script
+
+                    Map<String, String> newEnv = new HashMap<>(launch.getEnvironmentVariables());
+                    newEnv.put(JAVA_HOME, javahome);
 
                     // SLING-9994 - if any extra vm options were supplied, apply them here
                     StringBuilder javaOptsBuilder = null;
@@ -191,25 +201,19 @@ public class StartMojo extends AbstractMojo {
                     }
                     if (javaOptsBuilder != null) {
                         // pass vmOptions through JAVA_OPTS environment variable?
-                        Map<String, String> newEnv = new HashMap<>(launch.getEnvironmentVariables());
                         if (newEnv.containsKey(JAVA_OPTS)) {
                             // if the original value existed append it to our buffer
                             javaOptsBuilder.append(" ").append(newEnv.get(JAVA_OPTS));
                         }
                         newEnv.put(JAVA_OPTS, javaOptsBuilder.toString());
-                        launch.setEnvironmentVariables(newEnv);
                     }
 
                     args.add(launcher.getAbsolutePath());
+
+                    launch.setEnvironmentVariables(newEnv);
                 } else {
                     // use the pre v1.1.28 single jar technique
 
-                    String javahome = System.getenv("JAVA_HOME");
-                    if (javahome == null || javahome.isEmpty()) {
-                        // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
-                        getLog().warn("The JAVA_HOME env variable was not set, falling back to the java.home system property");
-                        javahome = System.getProperty("java.home");
-                    }
                     args.add(javahome + File.separatorChar + "bin" + File.separatorChar + "java");
                     // SLING-9994 - if any extra vm options were supplied, apply them here
                     String[] vmOptions = launch.getLauncherArguments().getVmOptions();
