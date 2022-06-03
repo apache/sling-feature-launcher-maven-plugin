@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling</artifactId>
-        <version>39</version>
+        <version>47</version>
         <relativePath />
     </parent>
 
@@ -47,6 +47,7 @@
     <properties>
         <sling.java.version>8</sling.java.version>
         <maven.version>3.3.9</maven.version>
+        <project.build.outputTimestamp>1</project.build.outputTimestamp>
     </properties>
 
     <dependencies>
