@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class LauncherArguments {
 
-    private String[] vmOptions = null;
+    private String[] vmOptions = new String[0];
     private Map<String, String> frameworkProperties = new HashMap<>();
     private Map<String, String> variables = new HashMap<>();
     

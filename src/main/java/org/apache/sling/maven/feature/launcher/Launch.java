@@ -31,7 +31,7 @@ public class Launch {
 
     private String id;
     private Dependency feature;
-    private LauncherArguments launcherArguments;
+    private LauncherArguments launcherArguments = new LauncherArguments();
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
     private Map<String,String> environmentVariables = new HashMap<>();

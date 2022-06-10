@@ -96,6 +96,7 @@ public class StartMojo extends AbstractMojo {
     @Component
     private ProcessTracker processes;
     
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         Artifact launcherArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:" + featureLauncherVersion);
@@ -133,11 +134,9 @@ public class StartMojo extends AbstractMojo {
                 args.add(javahome + File.separatorChar + "bin" + File.separatorChar + "java");
                 // SLING-9994 - if any extra vm options were supplied, apply them here
                 String[] vmOptions = launch.getLauncherArguments().getVmOptions();
-                if (vmOptions != null) {
-                    for (String vmOption : vmOptions) {
-                        if (vmOption != null && !vmOption.isEmpty()) {
-                            args.add(vmOption);
-                        }
+                for (String vmOption : vmOptions) {
+                    if (vmOption != null && !vmOption.isEmpty()) {
+                        args.add(vmOption);
                     }
                 }
                 args.add("-jar");
