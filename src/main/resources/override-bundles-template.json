@@ -1,0 +1,6 @@
+{
+  "id":"org.apache.sling:org.apache.sling.tmp.synthetic-feature:slingosgifeature:1-SNAPSHOT",
+  "bundles":[
+    ##BUNDLES##
+  ]
+}

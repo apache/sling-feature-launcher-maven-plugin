@@ -18,15 +18,17 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.maven.model.Dependency;
 
 public class Launch {
-    
+
     private static final Pattern ID_PATTERN = Pattern.compile("[a-zA-Z0-9_\\-\\.]+");
 
     private String id;
@@ -35,6 +37,7 @@ public class Launch {
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
     private Map<String,String> environmentVariables = new HashMap<>();
+    private List<String> additionalBundles = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -59,11 +62,11 @@ public class Launch {
     public void setLauncherArguments(LauncherArguments launcherArguments) {
         this.launcherArguments = launcherArguments;
     }
-    
+
     public int getStartTimeoutSeconds() {
         return startTimeoutSeconds;
     }
-    
+
     public void setStartTimeoutSeconds(int startTimeoutSeconds) {
         this.startTimeoutSeconds = startTimeoutSeconds;
     }
@@ -86,23 +89,31 @@ public class Launch {
         this.environmentVariables = environmentVariables;
     }
 
+    public List<String> getAdditionalBundles() {
+        return additionalBundles;
+    }
+
+    public void setAdditionalBundles(List<String> additionalBundles) {
+        this.additionalBundles = additionalBundles;
+    }
+
     public void validate() {
-        if ( id == null || id.trim().isEmpty() ) 
+        if ( id == null || id.trim().isEmpty() )
             throw new IllegalArgumentException("Missing id");
-        
+
         if ( !ID_PATTERN.matcher(id).matches() )
             throw new IllegalArgumentException("Invalid id '" + id + "'. Allowed characters are digits, numbers, '-','_' and '.'.");
-        
+
         if ( startTimeoutSeconds < 0 )
             throwInvalid("startTimeout value '" + startTimeoutSeconds + "' is negative" );
-        
+
         if ( feature == null )
             throwInvalid("required field 'feature' is missing");
-        
+
         if ( ! "slingosgifeature".equals(feature.getType()) )
             throwInvalid("type must be 'slingosgifeature' but is '" + feature.getType()+"'");
     }
-    
+
     private void throwInvalid(String reason) {
         throw new IllegalArgumentException("Invalid launch '" + id + "': " + reason);
     }

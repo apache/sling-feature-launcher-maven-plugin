@@ -26,7 +26,7 @@ public class LauncherArguments {
     private String[] vmOptions = null;
     private Map<String, String> frameworkProperties = new HashMap<>();
     private Map<String, String> variables = new HashMap<>();
-    
+
     public String[] getVmOptions() {
         return vmOptions;
     }
@@ -38,7 +38,7 @@ public class LauncherArguments {
     public Map<String, String> getFrameworkProperties() {
         return frameworkProperties;
     }
-    
+
     public void setFrameworkProperties(Map<String, String> frameworkProperties) {
         this.frameworkProperties = frameworkProperties;
     }
