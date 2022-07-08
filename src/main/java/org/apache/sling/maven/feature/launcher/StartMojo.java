@@ -96,6 +96,9 @@ public class StartMojo extends AbstractMojo {
     @Component
     private ProcessTracker processes;
     
+    @Parameter
+    private boolean block;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -197,6 +200,11 @@ public class StartMojo extends AbstractMojo {
                 }
                 
                 processes.startTracking(launch.getId(), process);
+            }
+
+            if ( block ) {
+                getLog().info("Waiting until any key is pressed");
+                System.in.read();
             }
 
         } catch (ArtifactResolutionException | IOException e) {
