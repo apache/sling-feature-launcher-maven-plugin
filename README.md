@@ -5,7 +5,7 @@
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
 This plugin allows starting and stopping feature model applications without blocking the Maven
-execution. It is intended mainly for usage with integration tests.
+execution. It is intended mainly for usage with integration tests. The full Maven site documenting this plugin is at <https://sling.apache.org/components/sling-feature-launcher-maven-plugin/>.
 
 ## Usage
 
@@ -26,7 +26,7 @@ Configure the plugin as follows:
                 <feature>
                     <groupId>org.apache.sling</groupId>
                     <artifactId>org.apache.sling.starter</artifactId>
-                    <version>12-SNAPSHOT</version>
+                    <version>12</version>
                     <classifier>oak_tar</classifier>
                     <type>slingosgifeature</type>
                 </feature>

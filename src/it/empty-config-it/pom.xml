@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+    license agreements. See the NOTICE file distributed with this work for additional 
+    information regarding copyright ownership. The ASF licenses this file to 
+    you under the Apache License, Version 2.0 (the "License"); you may not use 
+    this file except in compliance with the License. You may obtain a copy of 
+    the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+    by applicable law or agreed to in writing, software distributed under the 
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+    OF ANY KIND, either express or implied. See the License for the specific 
+    language governing permissions and limitations under the License. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.apache.sling</groupId>
+    <artifactId>empty-config-it</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <description>An IT verifying that passing an empty config triggers no errors.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.sling</groupId>
+                <artifactId>slingfeature-maven-plugin</artifactId>
+                <version>1.3.6</version>
+                <extensions>true</extensions>
+                <!-- TODO - seems we can't attach non-aggregates -->
+                <configuration>
+                    <aggregates>
+                        <aggregate>
+                            <classifier>main</classifier>
+                            <filesInclude>model.json</filesInclude>
+                        </aggregate>
+                    </aggregates>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>attach-features</goal>
+                            <goal>aggregate-features</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>@project.groupId@</groupId>
+                <artifactId>@project.artifactId@</artifactId>
+                <version>@project.version@</version>
+                <configuration>
+                    <launches>
+                        <launch>
+                            <id>model</id>
+                            <feature>
+                                <groupId>org.apache.sling</groupId>
+                                <artifactId>empty-config-it</artifactId>
+                                <version>1.0-SNAPSHOT</version>
+                                <classifier>main</classifier>
+                                <type>slingosgifeature</type>
+                            </feature>
+                            <startTimeoutSeconds>180</startTimeoutSeconds>
+                        </launch>
+                    </launches>
+                    <toLaunch>
+                    </toLaunch>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

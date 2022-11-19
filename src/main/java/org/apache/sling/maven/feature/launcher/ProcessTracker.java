@@ -22,9 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.codehaus.plexus.component.annotations.Component;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
-@Component(role = ProcessTracker.class)
+@Named
+@Singleton
 public class ProcessTracker {
 
     static void stop(Process process) throws InterruptedException {

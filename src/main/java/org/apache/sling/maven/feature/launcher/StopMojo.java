@@ -32,9 +32,29 @@ import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
+/**
+ * Stop one or multiple <a href="https://sling.apache.org/documentation/development/feature-model.html">Sling Feature(s)</a>.
+ */
 @Mojo( name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class StopMojo extends AbstractMojo {
 
+    // TODO: extract this field into common parent class
+    /**
+     * List of {@link Launch} objects to start. Each is having the following format:
+     * <pre>{@code
+     * <id>...</id> <!-- the id of the launch, must be unique within the list, is mandatory -->
+     * <dependency>...</dependency> <!-- the Maven coordinates of the feature model -->
+     * <launcherArguments> <!-- additional arguments to pass to the launcher -->
+     *   <frameworkProperties>
+     *     <org.osgi.service.http.port>8090</org.osgi.service.http.port>
+     *   </framweworkProperties>
+     *   ..
+     * </launcherArguments>
+     * <environmentVariables><!--additional environment variables to pass to the launcher -->
+     *  <JAVA_HOME>...</JAVA_HOME>
+     * </environmentVariables>}
+     * </pre>
+     */
     @Parameter(required = true)
     private List<Launch> launches;
     
@@ -42,7 +62,7 @@ public class StopMojo extends AbstractMojo {
     private ProcessTracker processes;
     
     /**
-     * If {@code true} stopping the server is deferred until you press the Enter key.
+     * If {@code true} stopping the server is deferred until you press the Enter key on the terminal on which Maven is executed.
      */
     @Parameter(property = "feature-launcher.waitForInput", required = false, defaultValue = "false")
     protected boolean waitForInput;

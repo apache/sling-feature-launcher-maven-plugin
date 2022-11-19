@@ -59,6 +59,9 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
+/**
+ * Start one or multiple <a href="https://sling.apache.org/documentation/development/feature-model.html">Sling Feature(s)</a>.
+ */
 @Mojo( name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST )
 public class StartMojo extends AbstractMojo {
 
@@ -66,33 +69,36 @@ public class StartMojo extends AbstractMojo {
     private static final String JAVA_OPTS = "JAVA_OPTS";
 
     /**
-     * Location of the file.
+     * The directory in which the features are launched (below its child directory {@code launchers/<launch-id>}).
      */
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir", required = true )
     private File outputDirectory;
 
+    /**
+     * The version of the <a href="https://github.com/apache/sling-org-apache-sling-feature-launcher">Sling Feature Launcher</a> to use.
+     */
     @Parameter( required = true, defaultValue = "1.1.4")
     private String featureLauncherVersion;
     
+    // TODO: extract this field into common parent class
+    /**
+     * List of {@link Launch} objects to start. Each is having the following format:
+     * <pre>{@code
+     * <id>...</id> <!-- the id of the launch, must be unique within the list, is mandatory -->
+     * <dependency>...</dependency> <!-- the Maven coordinates of the feature model -->
+     * <launcherArguments> <!-- additional arguments to pass to the launcher -->
+     *   <frameworkProperties>
+     *     <org.osgi.service.http.port>8090</org.osgi.service.http.port>
+     *   </framweworkProperties>
+     *   ..
+     * </launcherArguments>
+     * <environmentVariables><!--additional environment variables to pass to the launcher -->
+     *  <JAVA_HOME>...</JAVA_HOME>
+     * </environmentVariables>}
+     * </pre>
+     */
     @Parameter(required = true)
     private List<Launch> launches;
-    
-    // <launches>
-    //   <launch>
-    //     <id>...</id>
-    //     <dependency>...</dependency>
-    //     <launcherArguments>
-    //        <frameworkProperties>
-    //          <org.osgi.service.http.port>8090</org.osgi.service.http.port>
-    //        </framweworkProperties>
-    //        ...
-    //     </launcherArguments>
-    //     <environmentVariables>
-    //        <JAVA_HOME>...</JAVA_HOME>
-    //     </environmentVariables>
-
-    @Parameter
-    private Map<String, String> environmentVariables;
 
     @Component
     private ArtifactResolver resolver;
@@ -217,11 +223,9 @@ public class StartMojo extends AbstractMojo {
                     args.add(javahome + File.separatorChar + "bin" + File.separatorChar + "java");
                     // SLING-9994 - if any extra vm options were supplied, apply them here
                     String[] vmOptions = launch.getLauncherArguments().getVmOptions();
-                    if (vmOptions != null) {
-                        for (String vmOption : vmOptions) {
-                            if (vmOption != null && !vmOption.isEmpty()) {
-                                args.add(vmOption);
-                            }
+                    for (String vmOption : vmOptions) {
+                        if (vmOption != null && !vmOption.isEmpty()) {
+                            args.add(vmOption);
                         }
                     }
                     args.add("-jar");
