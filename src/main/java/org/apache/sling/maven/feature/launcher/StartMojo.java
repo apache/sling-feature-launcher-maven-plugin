@@ -193,16 +193,14 @@ public class StartMojo extends AbstractMojo {
                     // SLING-9994 - if any extra vm options were supplied, apply them here
                     StringBuilder javaOptsBuilder = null;
                     String[] vmOptions = launch.getLauncherArguments().getVmOptions();
-                    if (vmOptions != null) {
-                        for (String vmOption : vmOptions) {
-                            if (vmOption != null && !vmOption.isEmpty()) {
-                                if (javaOptsBuilder == null) {
-                                    javaOptsBuilder = new StringBuilder();
-                                } else {
-                                    javaOptsBuilder.append(" ");
-                                }
-                                javaOptsBuilder.append(vmOption);
+                    for (String vmOption : vmOptions) {
+                        if (vmOption != null && !vmOption.isEmpty()) {
+                            if (javaOptsBuilder == null) {
+                                javaOptsBuilder = new StringBuilder();
+                            } else {
+                                javaOptsBuilder.append(" ");
                             }
+                            javaOptsBuilder.append(vmOption);
                         }
                     }
                     if (javaOptsBuilder != null) {
