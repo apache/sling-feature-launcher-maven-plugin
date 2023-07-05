@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -121,6 +122,7 @@ public class StartMojo extends AbstractMojo {
     @Component
     private ArchiverManager archiverManager;
 
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         try {
@@ -228,6 +230,12 @@ public class StartMojo extends AbstractMojo {
                     }
                     args.add("-jar");
                     args.add(launcher.getAbsolutePath());
+                }
+                if ( launch.getRepositoryUrls() != null && !launch.getRepositoryUrls().isEmpty() ) {
+                    args.add("-u");
+                    StringJoiner joiner = new StringJoiner(",");
+                    launch.getRepositoryUrls().forEach( joiner::add );
+                    args.add(joiner.toString());
                 }
                 args.add("-f");
                 args.add(featureFile.getAbsolutePath());

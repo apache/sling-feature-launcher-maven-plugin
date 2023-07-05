@@ -18,8 +18,10 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -35,6 +37,7 @@ public class Launch {
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
     private Map<String,String> environmentVariables = new HashMap<>();
+    private List<String> repositoryUrls = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -84,6 +87,14 @@ public class Launch {
 
     public void setEnvironmentVariables(Map<String, String> environmentVariables) {
         this.environmentVariables = environmentVariables;
+    }
+
+    public List<String> getRepositoryUrls() {
+        return repositoryUrls;
+    }
+
+    public void setRepositoryUrls(List<String> repositoryUrls) {
+        this.repositoryUrls = repositoryUrls;
     }
 
     public void validate() {
