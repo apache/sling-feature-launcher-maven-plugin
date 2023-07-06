@@ -194,4 +194,19 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <profiles>
+        <!-- remove once SLING-11934 is fixed -->
+        <profile>
+            <id>skip-invoker-windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <invoker.skip>true</invoker.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>
