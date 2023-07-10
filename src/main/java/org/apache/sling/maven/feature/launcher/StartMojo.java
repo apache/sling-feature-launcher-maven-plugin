@@ -93,6 +93,10 @@ public class StartMojo extends AbstractMojo {
      *   </framweworkProperties>
      *   ..
      * </launcherArguments>
+     * <repositoryUrls>
+     *    <repositoryUrl>file://${project.build.directory}/artifacts</repositoryUrl>
+     *    <repositoryUrl>https://repo1.maven.org/maven2/</repositoryUrl>
+     * </repositoryUrls>
      * <environmentVariables><!--additional environment variables to pass to the launcher -->
      *  <JAVA_HOME>...</JAVA_HOME>
      * </environmentVariables>}
