@@ -101,6 +101,14 @@ public class StartMojo extends AbstractMojo {
      *  <JAVA_HOME>...</JAVA_HOME>
      * </environmentVariables>}
      * </pre>
+     * 
+     * <p>The repository URLs replace the default values set by the Feature Launcher. These default values are:
+     * <ul>
+     *   <li>The local Maven repository at $HOME/.m2/repository</li>
+     *   <li>The Maven Central repository</li>
+     *   <li>The Apache Snapshots repository</li>
+     * </ul>
+     * </p>
      */
     @Parameter(required = true)
     private List<Launch> launches;
