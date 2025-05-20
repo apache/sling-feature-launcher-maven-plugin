@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>feature-launcher-maven-plugin</artifactId>
-    <version>0.1.7-SNAPSHOT</version>
+    <version>0.1.8</version>
     <packaging>maven-plugin</packaging>
 
     <name>Apache Sling Feature Launcher Maven Plugin</name>
@@ -36,7 +36,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-feature-launcher-maven-plugin.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-feature-launcher-maven-plugin.git</developerConnection>
         <url>https://github.com/apache/sling-feature-launcher-maven-plugin</url>
-        <tag>HEAD</tag>
+        <tag>feature-launcher-maven-plugin-0.1.8</tag>
     </scm>
 
 
@@ -47,7 +47,7 @@
     <properties>
         <sling.java.version>8</sling.java.version>
         <maven.version>3.3.9</maven.version>
-        <project.build.outputTimestamp>1688727164</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1747739572</project.build.outputTimestamp>
         <github.project.id>apache/sling-feature-launcher-maven-plugin</github.project.id>
         <maven.compiler.target>${sling.java.version}</maven.compiler.target><!-- also set target next to release due to https://issues.apache.org/jira/browse/MPLUGIN-404 -->
     </properties>
