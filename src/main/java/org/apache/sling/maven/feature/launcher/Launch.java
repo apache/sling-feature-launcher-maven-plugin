@@ -18,11 +18,13 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.maven.model.Dependency;
@@ -33,6 +35,7 @@ public class Launch {
 
     private String id;
     private Dependency feature;
+    private String featureFile;
     private LauncherArguments launcherArguments = new LauncherArguments();
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
@@ -47,12 +50,20 @@ public class Launch {
         this.id = id;
     }
 
-    public Dependency getFeature() {
-        return feature;
+    public Optional<Dependency> getFeature() {
+        return Optional.ofNullable(feature);
     }
 
     public void setFeature(Dependency feature) {
         this.feature = feature;
+    }
+    
+    public Optional<File> getFeatureFile() {
+        return Optional.ofNullable(featureFile).map(File::new);
+    }
+    
+    public void setFeatureFile(String featureFile) {
+        this.featureFile = featureFile;
     }
 
     public LauncherArguments getLauncherArguments() {
@@ -107,10 +118,19 @@ public class Launch {
         if ( startTimeoutSeconds < 0 )
             throwInvalid("startTimeout value '" + startTimeoutSeconds + "' is negative" );
         
-        if ( feature == null )
-            throwInvalid("required field 'feature' is missing");
+        boolean hasFeature = feature != null;
+        boolean hasFeatureFile = featureFile != null && !featureFile.trim().isEmpty();
         
-        if ( ! "slingosgifeature".equals(feature.getType()) )
+        if ( hasFeature && hasFeatureFile )
+            throwInvalid("Only one of 'feature' and 'featureFile' is allowed, but both are set");
+        
+        if ( !hasFeature && !hasFeatureFile )
+            throwInvalid("Neither 'feature' nor 'featureFile' are set");
+        
+        if ( hasFeatureFile && ! new File(featureFile).exists() )
+            throwInvalid("Feature file '" + featureFile + "' does not exist");
+        
+        if ( hasFeature && ! "slingosgifeature".equals(feature.getType()) )
             throwInvalid("type must be 'slingosgifeature' but is '" + feature.getType()+"'");
     }
     
