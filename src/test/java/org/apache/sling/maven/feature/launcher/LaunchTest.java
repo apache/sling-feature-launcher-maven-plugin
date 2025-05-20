@@ -18,30 +18,50 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.apache.maven.model.Dependency;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class LaunchTest {
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
     
     private Dependency validDep;
-    
+    private File validFeatureFile;
+
     @Before
-    public void prepare() {
+    public void prepare() throws IOException {
         validDep  = new Dependency();
         validDep.setGroupId("org.apache.sling");
         validDep.setArtifactId("org.apache.sling.starter");
         validDep.setVersion("12");
         validDep.setClassifier("oak_tar");
         validDep.setType("slingosgifeature");
+        
+        validFeatureFile = tmp.newFile("feature.json");
     }
 
     @Test
-    public void validLaunch() {
+    public void validLaunch_withFeature() {
         
         Launch launch = new Launch();
         launch.setFeature(validDep);
         launch.setId("oak_TAR-12.1"); // covers all allowed character classes
+        launch.validate();
+    }
+
+    @Test
+    public void validLaunch_withFeatureFile() {
+        
+        Launch launch = new Launch();
+        launch.setFeatureFile(validFeatureFile.getAbsolutePath());
+        launch.setId("feature");
         launch.validate();
     }
 
@@ -91,5 +111,23 @@ public class LaunchTest {
         launch.setStartTimeoutSeconds(-10);
         launch.validate();
     }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_bothFeatureAndFeatureFile() {
 
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeature(validDep);
+        launch.setFeatureFile(validFeatureFile.getAbsolutePath());
+        launch.validate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_missingFeatureFile() {
+
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFile(validFeatureFile.getAbsolutePath() + ".missing");
+        launch.validate();
+    }
 }

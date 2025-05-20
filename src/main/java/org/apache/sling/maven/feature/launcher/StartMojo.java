@@ -85,8 +85,9 @@ public class StartMojo extends AbstractMojo {
     /**
      * List of {@link Launch} objects to start. Each is having the following format:
      * <pre>{@code
-     * <id>...</id> <!-- the id of the launch, must be unique within the list, is mandatory -->
-     * <dependency>...</dependency> <!-- the Maven coordinates of the feature model -->
+     * <id>...</id> <!-- the id of the launch, must be unique within the list, is mandatory-->
+     * <feature>...</feature> <!-- the Maven coordinates of the feature model, mandatory unless featureFile is used  -->
+     * <featureFile>...</featureFile> <!-- the path to the feature model, mandatory unless feature is used -->
      * <launcherArguments> <!-- additional arguments to pass to the launcher -->
      *   <frameworkProperties>
      *     <org.osgi.service.http.port>8090</org.osgi.service.http.port>
@@ -185,12 +186,13 @@ public class StartMojo extends AbstractMojo {
                 }
 
                 launch.validate();
-
-                Artifact artifact = toArtifact(launch.getFeature());
                 
-                ArtifactResult result = resolver.resolveArtifact(repositorySession, new ArtifactRequest(artifact, remoteRepos, null));
-                File featureFile = result.getArtifact().getFile();
-
+                File featureFile = launch.getFeature().
+                    map( this::toArtifact )
+                   .map( a -> uncheckedResolveArtifact(repositorySession, a) )
+                   .map( r -> r.getArtifact().getFile())
+                   .orElseGet( () -> launch.getFeatureFile().get() ); // the Launch is guaranteed to either have a feature or a featureFile set
+                
                 String javahome = System.getenv(JAVA_HOME);
                 if (javahome == null || javahome.isEmpty()) {
                     // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
@@ -315,6 +317,14 @@ public class StartMojo extends AbstractMojo {
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Execution interrupted", e);
+        }
+    }
+
+    private ArtifactResult uncheckedResolveArtifact(RepositorySystemSession repositorySession, Artifact artifact) {
+        try {
+            return resolver.resolveArtifact(repositorySession, new ArtifactRequest(artifact, remoteRepos, null));
+        } catch (ArtifactResolutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
