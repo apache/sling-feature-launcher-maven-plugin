@@ -46,7 +46,7 @@
 
     <properties>
         <sling.java.version>8</sling.java.version>
-        <maven.version>3.3.9</maven.version>
+        <maven.version>3.8.1</maven.version>
         <project.build.outputTimestamp>1747739602</project.build.outputTimestamp>
         <github.project.id>apache/sling-feature-launcher-maven-plugin</github.project.id>
         <maven.compiler.target>${sling.java.version}</maven.compiler.target><!-- also set target next to release due to https://issues.apache.org/jira/browse/MPLUGIN-404 -->
