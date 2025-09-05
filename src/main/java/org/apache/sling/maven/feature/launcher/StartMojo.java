@@ -79,7 +79,7 @@ public class StartMojo extends AbstractMojo {
     /**
      * The version of the <a href="https://github.com/apache/sling-org-apache-sling-feature-launcher">Sling Feature Launcher</a> to use.
      */
-    @Parameter( required = true, defaultValue = "1.1.4")
+    @Parameter( required = true, defaultValue = "1.3.4")
     private String featureLauncherVersion;
     
     // TODO: extract this field into common parent class
