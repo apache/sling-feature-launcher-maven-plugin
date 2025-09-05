@@ -34,6 +34,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
@@ -103,9 +104,9 @@ public class StartMojo extends AbstractMojo {
      * </environmentVariables>}
      * </pre>
      * 
-     * <p>The repository URLs replace the default values set by the Feature Launcher. These default values are:
+     * <p>If no repository URLs are configured the following defaults are used, in order:
      * <ul>
-     *   <li>The local Maven repository at $HOME/.m2/repository</li>
+     *   <li>The local Maven repository</li>
      *   <li>The Maven Central repository</li>
      *   <li>The Apache Snapshots repository</li>
      * </ul>
@@ -116,6 +117,9 @@ public class StartMojo extends AbstractMojo {
 
     @Component
     private ArtifactResolver resolver;
+    
+    @Parameter(defaultValue = "${localRepository}", readonly = true)
+    private ArtifactRepository localRepository;
 
     @Parameter(defaultValue = "${project.remotePluginRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
@@ -245,12 +249,27 @@ public class StartMojo extends AbstractMojo {
                     args.add("-jar");
                     args.add(launcher.getAbsolutePath());
                 }
+                
+                List<String> repositoryUrls;
+                
                 if ( launch.getRepositoryUrls() != null && !launch.getRepositoryUrls().isEmpty() ) {
-                    args.add("-u");
-                    StringJoiner joiner = new StringJoiner(",");
-                    launch.getRepositoryUrls().forEach( joiner::add );
-                    args.add(joiner.toString());
+                    repositoryUrls = launch.getRepositoryUrls();
+                } else {
+                    // replicate the behaviour from org.apache.sling.feature.io.artifacts.ArtifactManager
+                    // but pass in the currently configured local repository. The ArtifactManager checks for the local
+                    // configuration file $HOME/.m2/settings.xml but cannot find out if the Maven process was invoked
+                    // with a maven.repo.local argument
+                    repositoryUrls = new ArrayList<>();
+                    repositoryUrls.add("file://" + localRepository.getBasedir());
+                    repositoryUrls.add("https://repo1.maven.org/maven2");
+                    repositoryUrls.add("https://repository.apache.org/content/group/snapshots");
                 }
+                
+                args.add("-u");
+                StringJoiner joiner = new StringJoiner(",");
+                repositoryUrls.forEach( joiner::add );
+                args.add(joiner.toString());
+                
                 args.add("-f");
                 args.add(featureFile.getAbsolutePath());
                 args.add("-p");
