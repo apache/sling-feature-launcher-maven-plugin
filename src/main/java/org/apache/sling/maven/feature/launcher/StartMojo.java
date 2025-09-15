@@ -260,7 +260,7 @@ public class StartMojo extends AbstractMojo {
                     // configuration file $HOME/.m2/settings.xml but cannot find out if the Maven process was invoked
                     // with a maven.repo.local argument
                     repositoryUrls = new ArrayList<>();
-                    repositoryUrls.add("file://" + localRepository.getBasedir());
+                    repositoryUrls.add(new File(localRepository.getBasedir()).toURI().toString());
                     repositoryUrls.add("https://repo1.maven.org/maven2");
                     repositoryUrls.add("https://repository.apache.org/content/group/snapshots");
                 }
