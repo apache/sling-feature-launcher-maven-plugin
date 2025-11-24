@@ -18,7 +18,6 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +63,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 /**
  * Start one or multiple <a href="https://sling.apache.org/documentation/development/feature-model.html">Sling Feature(s)</a>.
  */
-@Mojo( name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST )
+@Mojo(name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST)
 public class StartMojo extends AbstractMojo {
 
     private static final String JAVA_HOME = "JAVA_HOME";
@@ -73,15 +72,15 @@ public class StartMojo extends AbstractMojo {
     /**
      * The directory in which the features are launched (below its child directory {@code launchers/<launch-id>}).
      */
-    @Parameter( defaultValue = "${project.build.directory}", property = "outputDir", required = true )
+    @Parameter(defaultValue = "${project.build.directory}", property = "outputDir", required = true)
     private File outputDirectory;
 
     /**
      * The version of the <a href="https://github.com/apache/sling-org-apache-sling-feature-launcher">Sling Feature Launcher</a> to use.
      */
-    @Parameter( required = true, defaultValue = "1.3.4")
+    @Parameter(required = true, defaultValue = "1.3.4")
     private String featureLauncherVersion;
-    
+
     // TODO: extract this field into common parent class
     /**
      * List of {@link Launch} objects to start. Each is having the following format:
@@ -103,7 +102,7 @@ public class StartMojo extends AbstractMojo {
      *  <JAVA_HOME>...</JAVA_HOME>
      * </environmentVariables>}
      * </pre>
-     * 
+     *
      * <p>If no repository URLs are configured the following defaults are used, in order:
      * <ul>
      *   <li>The local Maven repository</li>
@@ -117,7 +116,7 @@ public class StartMojo extends AbstractMojo {
 
     @Component
     private ArtifactResolver resolver;
-    
+
     @Parameter(defaultValue = "${localRepository}", readonly = true)
     private ArtifactRepository localRepository;
 
@@ -129,7 +128,7 @@ public class StartMojo extends AbstractMojo {
 
     @Parameter(property = "session", readonly = true, required = true)
     protected MavenSession mavenSession;
-    
+
     @Component
     private ProcessTracker processes;
 
@@ -146,7 +145,8 @@ public class StartMojo extends AbstractMojo {
             // the feature launcher before version 1.1.28 used a single jar, while versions
             //  after that provide an assembly per SLING-10956
             VersionRange beforeAssemblyRange = VersionRange.createFromVersionSpec("(,1.1.26]");
-            boolean useAssembly = !beforeAssemblyRange.containsVersion(new DefaultArtifactVersion(featureLauncherVersion));
+            boolean useAssembly =
+                    !beforeAssemblyRange.containsVersion(new DefaultArtifactVersion(featureLauncherVersion));
 
             RepositorySystemSession repositorySession = mavenSession.getRepositorySession();
             File workDir = new File(outputDirectory, "launchers");
@@ -155,20 +155,22 @@ public class StartMojo extends AbstractMojo {
             File launcher;
             if (useAssembly) {
                 // fetch the assembly artifact
-                Artifact launcherAssemblyArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:tar.gz:" + featureLauncherVersion);
-                File assemblyArchive = resolver
-                        .resolveArtifact(repositorySession, new ArtifactRequest(launcherAssemblyArtifact, remoteRepos, null))
+                Artifact launcherAssemblyArtifact = new DefaultArtifact(
+                        "org.apache.sling:org.apache.sling.feature.launcher:tar.gz:" + featureLauncherVersion);
+                File assemblyArchive = resolver.resolveArtifact(
+                                repositorySession, new ArtifactRequest(launcherAssemblyArtifact, remoteRepos, null))
                         .getArtifact()
                         .getFile();
 
                 // unpack the file
-                UnArchiver unArchiver = archiverManager.getUnArchiver( assemblyArchive );
+                UnArchiver unArchiver = archiverManager.getUnArchiver(assemblyArchive);
                 unArchiver.setSourceFile(assemblyArchive);
                 unArchiver.setDestFile(workDir);
                 unArchiver.extract();
 
                 // system property
-                Path relPath = Paths.get(launcherAssemblyArtifact.getArtifactId() + "-" + launcherAssemblyArtifact.getVersion(), "bin");
+                Path relPath = Paths.get(
+                        launcherAssemblyArtifact.getArtifactId() + "-" + launcherAssemblyArtifact.getVersion(), "bin");
                 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                     relPath = relPath.resolve("launcher.bat");
                 } else {
@@ -176,31 +178,34 @@ public class StartMojo extends AbstractMojo {
                 }
                 launcher = workDir.toPath().resolve(relPath).toFile();
             } else {
-                Artifact launcherArtifact = new DefaultArtifact("org.apache.sling:org.apache.sling.feature.launcher:" + featureLauncherVersion);
-                launcher = resolver
-                        .resolveArtifact(repositorySession, new ArtifactRequest(launcherArtifact, remoteRepos, null))
+                Artifact launcherArtifact = new DefaultArtifact(
+                        "org.apache.sling:org.apache.sling.feature.launcher:" + featureLauncherVersion);
+                launcher = resolver.resolveArtifact(
+                                repositorySession, new ArtifactRequest(launcherArtifact, remoteRepos, null))
                         .getArtifact()
                         .getFile();
             }
-            
-            for ( Launch launch : launches ) {
+
+            for (Launch launch : launches) {
                 if (launch.isSkip()) {
                     getLog().info("Skipping starting launch with id " + launch.getId());
                     continue; // skip it
                 }
 
                 launch.validate();
-                
-                File featureFile = launch.getFeature().
-                    map( this::toArtifact )
-                   .map( a -> uncheckedResolveArtifact(repositorySession, a) )
-                   .map( r -> r.getArtifact().getFile())
-                   .orElseGet( () -> launch.getFeatureFile().get() ); // the Launch is guaranteed to either have a feature or a featureFile set
-                
+
+                File featureFile = launch.getFeature()
+                        .map(this::toArtifact)
+                        .map(a -> uncheckedResolveArtifact(repositorySession, a))
+                        .map(r -> r.getArtifact().getFile())
+                        .orElseGet(() -> launch.getFeatureFile()
+                                .get()); // the Launch is guaranteed to either have a feature or a featureFile set
+
                 String javahome = System.getenv(JAVA_HOME);
                 if (javahome == null || javahome.isEmpty()) {
                     // SLING-9843 fallback to java.home system property if JAVA_HOME env variable is not set
-                    getLog().warn("The JAVA_HOME env variable was not set, falling back to the java.home system property");
+                    getLog().warn(
+                                    "The JAVA_HOME env variable was not set, falling back to the java.home system property");
                     javahome = System.getProperty("java.home");
                 }
                 List<String> args = new ArrayList<>();
@@ -249,10 +254,11 @@ public class StartMojo extends AbstractMojo {
                     args.add("-jar");
                     args.add(launcher.getAbsolutePath());
                 }
-                
+
                 List<String> repositoryUrls;
-                
-                if ( launch.getRepositoryUrls() != null && !launch.getRepositoryUrls().isEmpty() ) {
+
+                if (launch.getRepositoryUrls() != null
+                        && !launch.getRepositoryUrls().isEmpty()) {
                     repositoryUrls = launch.getRepositoryUrls();
                 } else {
                     // replicate the behaviour from org.apache.sling.feature.io.artifacts.ArtifactManager
@@ -260,29 +266,32 @@ public class StartMojo extends AbstractMojo {
                     // configuration file $HOME/.m2/settings.xml but cannot find out if the Maven process was invoked
                     // with a maven.repo.local argument
                     repositoryUrls = new ArrayList<>();
-                    repositoryUrls.add(new File(localRepository.getBasedir()).toURI().toString());
+                    repositoryUrls.add(
+                            new File(localRepository.getBasedir()).toURI().toString());
                     repositoryUrls.add("https://repo1.maven.org/maven2");
                     repositoryUrls.add("https://repository.apache.org/content/group/snapshots");
                 }
-                
+
                 args.add("-u");
                 StringJoiner joiner = new StringJoiner(",");
-                repositoryUrls.forEach( joiner::add );
+                repositoryUrls.forEach(joiner::add);
                 args.add(joiner.toString());
-                
+
                 args.add("-f");
                 args.add(featureFile.getAbsolutePath());
                 args.add("-p");
                 args.add(launch.getId());
-                
-                for ( Map.Entry<String, String> frameworkProperty : launch.getLauncherArguments().getFrameworkProperties().entrySet() ) {
+
+                for (Map.Entry<String, String> frameworkProperty :
+                        launch.getLauncherArguments().getFrameworkProperties().entrySet()) {
                     args.add("-D");
-                    args.add(frameworkProperty.getKey()+"="+frameworkProperty.getValue());
+                    args.add(frameworkProperty.getKey() + "=" + frameworkProperty.getValue());
                 }
-                
-                for ( Map.Entry<String, String> variable : launch.getLauncherArguments().getVariables().entrySet() ) {
+
+                for (Map.Entry<String, String> variable :
+                        launch.getLauncherArguments().getVariables().entrySet()) {
                     args.add("-V");
-                    args.add(variable.getKey()+"="+variable.getValue());
+                    args.add(variable.getKey() + "=" + variable.getValue());
                 }
 
                 // TODO - add support for all arguments supported by the feature launcher
@@ -290,27 +299,26 @@ public class StartMojo extends AbstractMojo {
                 pb.redirectOutput(Redirect.INHERIT);
                 pb.redirectInput(Redirect.INHERIT);
                 pb.directory(workDir);
-                launch.getEnvironmentVariables().entrySet()
-                    .forEach( e -> {
-                            getLog().info("Setting environment variable '" + e.getKey() + "' to '" + e.getValue() + "'");
-                            pb.environment().put(e.getKey(), e.getValue());
-                        } );
-                
+                launch.getEnvironmentVariables().entrySet().forEach(e -> {
+                    getLog().info("Setting environment variable '" + e.getKey() + "' to '" + e.getValue() + "'");
+                    pb.environment().put(e.getKey(), e.getValue());
+                });
+
                 getLog().info("Starting launch with id '" + launch.getId() + "', args=" + args);
-                
+
                 CountDownLatch latch = new CountDownLatch(1);
-                
+
                 Process process = pb.start();
-                
+
                 Thread monitor = new Thread("launch-monitor-" + launch.getId()) {
                     @Override
                     public void run() {
                         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                         String line;
                         try {
-                            while ( (line = reader.readLine()) != null ) {
+                            while ((line = reader.readLine()) != null) {
                                 System.out.println(line); // NOSONAR - we pass through the subprocess stderr
-                                if ( line.contains("Framework started")) {
+                                if (line.contains("Framework started")) {
                                     latch.countDown();
                                     break;
                                 }
@@ -323,17 +331,21 @@ public class StartMojo extends AbstractMojo {
                 monitor.start();
                 getLog().info("Waiting for " + launch.getId() + " to start");
                 boolean started = latch.await(launch.getStartTimeoutSeconds(), TimeUnit.SECONDS);
-                if ( !started ) {
+                if (!started) {
                     ProcessTracker.stop(process);
-                    throw new MojoExecutionException("Launch " + launch.getId() + " failed to start in " + launch.getStartTimeoutSeconds() + " seconds.");
+                    throw new MojoExecutionException("Launch " + launch.getId() + " failed to start in "
+                            + launch.getStartTimeoutSeconds() + " seconds.");
                 }
-                
+
                 processes.startTracking(launch.getId(), process);
             }
 
-        } catch (NoSuchArchiverException | InvalidVersionSpecificationException | ArtifactResolutionException | IOException e) {
+        } catch (NoSuchArchiverException
+                | InvalidVersionSpecificationException
+                | ArtifactResolutionException
+                | IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
-        } catch ( InterruptedException e ) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Execution interrupted", e);
         }
@@ -348,6 +360,11 @@ public class StartMojo extends AbstractMojo {
     }
 
     private Artifact toArtifact(Dependency dependency) {
-        return new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion());
+        return new DefaultArtifact(
+                dependency.getGroupId(),
+                dependency.getArtifactId(),
+                dependency.getClassifier(),
+                dependency.getType(),
+                dependency.getVersion());
     }
 }

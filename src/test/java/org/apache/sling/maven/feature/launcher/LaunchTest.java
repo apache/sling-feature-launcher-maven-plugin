@@ -31,25 +31,25 @@ public class LaunchTest {
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
-    
+
     private Dependency validDep;
     private File validFeatureFile;
 
     @Before
     public void prepare() throws IOException {
-        validDep  = new Dependency();
+        validDep = new Dependency();
         validDep.setGroupId("org.apache.sling");
         validDep.setArtifactId("org.apache.sling.starter");
         validDep.setVersion("12");
         validDep.setClassifier("oak_tar");
         validDep.setType("slingosgifeature");
-        
+
         validFeatureFile = tmp.newFile("feature.json");
     }
 
     @Test
     public void validLaunch_withFeature() {
-        
+
         Launch launch = new Launch();
         launch.setFeature(validDep);
         launch.setId("oak_TAR-12.1"); // covers all allowed character classes
@@ -58,7 +58,7 @@ public class LaunchTest {
 
     @Test
     public void validLaunch_withFeatureFile() {
-        
+
         Launch launch = new Launch();
         launch.setFeatureFile(validFeatureFile.getAbsolutePath());
         launch.setId("feature");
@@ -67,7 +67,7 @@ public class LaunchTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_noId() {
-        
+
         Launch launch = new Launch();
         launch.setFeature(validDep);
         launch.validate();
@@ -75,10 +75,10 @@ public class LaunchTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_unsupportedType() {
-        
+
         Dependency invalidDep = validDep.clone();
         invalidDep.setType("jar");
-        
+
         Launch launch = new Launch();
         launch.setFeature(invalidDep);
         launch.setId("oak_tar");
@@ -87,7 +87,7 @@ public class LaunchTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_noFeature() {
-        
+
         Launch launch = new Launch();
         launch.setId("no_feature");
         launch.validate();
@@ -95,7 +95,7 @@ public class LaunchTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_badId() {
-        
+
         Launch launch = new Launch();
         launch.setId("/feature");
         launch.setFeature(validDep);
@@ -104,14 +104,14 @@ public class LaunchTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_negativeTimeout() {
-        
+
         Launch launch = new Launch();
         launch.setId("feature");
         launch.setFeature(validDep);
         launch.setStartTimeoutSeconds(-10);
         launch.validate();
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void invalidLaunch_bothFeatureAndFeatureFile() {
 

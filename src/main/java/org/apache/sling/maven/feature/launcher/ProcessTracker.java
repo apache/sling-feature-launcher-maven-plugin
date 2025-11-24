@@ -18,12 +18,12 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 import org.apache.maven.shared.utils.Os;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class ProcessTracker {
         LOG.debug("Destroy process: {}", process);
         process.destroy();
         boolean stopped = process.waitFor(30, TimeUnit.SECONDS);
-        if ( !stopped ) {
+        if (!stopped) {
             LOG.debug("Forcibly destroy process after 30sec: {}", process);
             process.destroyForcibly();
         }
@@ -65,7 +65,7 @@ public class ProcessTracker {
             childProcess.destroy();
             try {
                 boolean stopped = childProcess.onExit().get(30, TimeUnit.SECONDS) != null;
-                if ( !stopped ) {
+                if (!stopped) {
                     LOG.debug("Forcibly destroy child process after 30sec: {}", childProcess);
                     childProcess.destroyForcibly();
                 }
@@ -85,21 +85,22 @@ public class ProcessTracker {
 
     public void startTracking(String launchId, Process process) {
         synchronized (sync) {
-            if ( processes.containsKey(launchId) )
+            if (processes.containsKey(launchId))
                 throw new IllegalArgumentException("Launch id " + launchId + " already associated with a process");
             LOG.debug("Start tracking process for launch {}: {}", launchId, process);
             processes.put(launchId, process);
-            if ( ! hookAdded ) {
+            if (!hookAdded) {
                 Runtime.getRuntime().addShutdownHook(new Thread("process-tracker-shutdown") {
                     @Override
                     public void run() {
                         LOG.debug("Shutdown hook  is running for launch {}: {}", launchId, process);
-                        for ( Map.Entry<String, Process> entry : processes.entrySet() ) {
-                            LOG.error("Launch {} was not shut down! Destroying forcibly from shutdown hook.", entry.getKey());
+                        for (Map.Entry<String, Process> entry : processes.entrySet()) {
+                            LOG.error(
+                                    "Launch {} was not shut down! Destroying forcibly from shutdown hook.",
+                                    entry.getKey());
                             process.destroyForcibly();
                         }
                     }
-
                 });
                 hookAdded = true;
             }
@@ -111,15 +112,14 @@ public class ProcessTracker {
         synchronized (sync) {
             process = processes.remove(id);
         }
-        if ( process == null ) {
+        if (process == null) {
             LOG.warn("Process not found in process list, skip stopping: {}", id);
             return;
         }
 
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             stopWithDescendants(process);
-        }
-        else {
+        } else {
             stop(process);
         }
     }
