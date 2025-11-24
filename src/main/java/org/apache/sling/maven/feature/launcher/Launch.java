@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 import org.apache.maven.model.Dependency;
 
 public class Launch {
-    
+
     private static final Pattern ID_PATTERN = Pattern.compile("[a-zA-Z0-9_\\-\\.]+");
 
     private String id;
@@ -39,7 +39,7 @@ public class Launch {
     private LauncherArguments launcherArguments = new LauncherArguments();
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
-    private Map<String,String> environmentVariables = new HashMap<>();
+    private Map<String, String> environmentVariables = new HashMap<>();
     private List<String> repositoryUrls = new ArrayList<>();
 
     public String getId() {
@@ -57,11 +57,11 @@ public class Launch {
     public void setFeature(Dependency feature) {
         this.feature = feature;
     }
-    
+
     public Optional<File> getFeatureFile() {
         return Optional.ofNullable(featureFile).map(File::new);
     }
-    
+
     public void setFeatureFile(String featureFile) {
         this.featureFile = featureFile;
     }
@@ -73,11 +73,11 @@ public class Launch {
     public void setLauncherArguments(LauncherArguments launcherArguments) {
         this.launcherArguments = launcherArguments;
     }
-    
+
     public int getStartTimeoutSeconds() {
         return startTimeoutSeconds;
     }
-    
+
     public void setStartTimeoutSeconds(int startTimeoutSeconds) {
         this.startTimeoutSeconds = startTimeoutSeconds;
     }
@@ -91,8 +91,7 @@ public class Launch {
     }
 
     public Map<String, String> getEnvironmentVariables() {
-        if ( environmentVariables == null )
-            return Collections.emptyMap();
+        if (environmentVariables == null) return Collections.emptyMap();
         return environmentVariables;
     }
 
@@ -109,31 +108,29 @@ public class Launch {
     }
 
     public void validate() {
-        if ( id == null || id.trim().isEmpty() ) 
-            throw new IllegalArgumentException("Missing id");
-        
-        if ( !ID_PATTERN.matcher(id).matches() )
-            throw new IllegalArgumentException("Invalid id '" + id + "'. Allowed characters are digits, numbers, '-','_' and '.'.");
-        
-        if ( startTimeoutSeconds < 0 )
-            throwInvalid("startTimeout value '" + startTimeoutSeconds + "' is negative" );
-        
+        if (id == null || id.trim().isEmpty()) throw new IllegalArgumentException("Missing id");
+
+        if (!ID_PATTERN.matcher(id).matches())
+            throw new IllegalArgumentException(
+                    "Invalid id '" + id + "'. Allowed characters are digits, numbers, '-','_' and '.'.");
+
+        if (startTimeoutSeconds < 0) throwInvalid("startTimeout value '" + startTimeoutSeconds + "' is negative");
+
         boolean hasFeature = feature != null;
         boolean hasFeatureFile = featureFile != null && !featureFile.trim().isEmpty();
-        
-        if ( hasFeature && hasFeatureFile )
+
+        if (hasFeature && hasFeatureFile)
             throwInvalid("Only one of 'feature' and 'featureFile' is allowed, but both are set");
-        
-        if ( !hasFeature && !hasFeatureFile )
-            throwInvalid("Neither 'feature' nor 'featureFile' are set");
-        
-        if ( hasFeatureFile && ! new File(featureFile).exists() )
+
+        if (!hasFeature && !hasFeatureFile) throwInvalid("Neither 'feature' nor 'featureFile' are set");
+
+        if (hasFeatureFile && !new File(featureFile).exists())
             throwInvalid("Feature file '" + featureFile + "' does not exist");
-        
-        if ( hasFeature && ! "slingosgifeature".equals(feature.getType()) )
-            throwInvalid("type must be 'slingosgifeature' but is '" + feature.getType()+"'");
+
+        if (hasFeature && !"slingosgifeature".equals(feature.getType()))
+            throwInvalid("type must be 'slingosgifeature' but is '" + feature.getType() + "'");
     }
-    
+
     private void throwInvalid(String reason) {
         throw new IllegalArgumentException("Invalid launch '" + id + "': " + reason);
     }

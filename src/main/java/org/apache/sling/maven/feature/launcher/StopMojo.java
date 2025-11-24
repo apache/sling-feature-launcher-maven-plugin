@@ -35,7 +35,7 @@ import org.codehaus.plexus.components.interactivity.PrompterException;
 /**
  * Stop one or multiple <a href="https://sling.apache.org/documentation/development/feature-model.html">Sling Feature(s)</a>.
  */
-@Mojo( name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
+@Mojo(name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class StopMojo extends AbstractMojo {
 
     // TODO: extract this field into common parent class
@@ -57,10 +57,10 @@ public class StopMojo extends AbstractMojo {
      */
     @Parameter(required = true)
     private List<Launch> launches;
-    
+
     @Component
     private ProcessTracker processes;
-    
+
     /**
      * If {@code true} stopping the server is deferred until you press the Enter key on the terminal on which Maven is executed.
      */
@@ -83,7 +83,7 @@ public class StopMojo extends AbstractMojo {
             }
         }
         try {
-            for ( Launch launch : launches ) {
+            for (Launch launch : launches) {
                 if (launch.isSkip()) {
                     getLog().info("Skipping stopping launch with id " + launch.getId());
                     continue; // skip it
@@ -100,11 +100,14 @@ public class StopMojo extends AbstractMojo {
     protected void waitForUserInput() throws MojoFailureException {
         // http://stackoverflow.com/a/21977269/5155923
         try {
-            String message = MessageUtils.buffer().warning("Waiting for user input before build continues...").toString();
+            String message = MessageUtils.buffer()
+                    .warning("Waiting for user input before build continues...")
+                    .toString();
             getLog().warn(message);
             prompter.prompt("Press Enter to continue");
         } catch (PrompterException e) {
-            throw new MojoFailureException("Could not prompt for user input. Do not use parameter 'waitForInput' in that case", e);
+            throw new MojoFailureException(
+                    "Could not prompt for user input. Do not use parameter 'waitForInput' in that case", e);
         }
     }
 }
