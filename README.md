@@ -49,8 +49,6 @@ Configure the plugin as follows:
                 <startTimeoutSeconds>180</startTimeoutSeconds>
             </launch>
         </launches>
-        <toLaunch>
-        </toLaunch>
     </configuration>
     <executions>
         <execution>
