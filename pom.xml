@@ -45,7 +45,7 @@
     </prerequisites>
 
     <properties>
-        <sling.java.version>8</sling.java.version>
+        <sling.java.version>11</sling.java.version>
         <maven.version>3.8.1</maven.version>
         <project.build.outputTimestamp>1757086693</project.build.outputTimestamp>
         <github.project.id>apache/sling-feature-launcher-maven-plugin</github.project.id>
@@ -196,18 +196,4 @@
         </plugins>
     </reporting>
 
-    <profiles>
-        <!-- remove once SLING-11934 is fixed -->
-        <profile>
-            <id>skip-invoker-windows</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                </os>
-            </activation>
-            <properties>
-                <invoker.skip>true</invoker.skip>
-            </properties>
-        </profile>
-    </profiles>
 </project>
