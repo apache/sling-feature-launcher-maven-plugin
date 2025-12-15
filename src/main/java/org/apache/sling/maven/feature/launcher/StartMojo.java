@@ -95,7 +95,7 @@ public class StartMojo extends AbstractMojo {
      *   ..
      * </launcherArguments>
      * <repositoryUrls>
-     *    <repositoryUrl>file://${project.build.directory}/artifacts</repositoryUrl>
+     *    <repositoryUrl>file://.../artifacts</repositoryUrl>
      *    <repositoryUrl>https://repo1.maven.org/maven2/</repositoryUrl>
      * </repositoryUrls>
      * <environmentVariables><!--additional environment variables to pass to the launcher -->
