@@ -81,6 +81,12 @@ public class StartMojo extends AbstractMojo {
     @Parameter(required = true, defaultValue = "1.3.4")
     private String featureLauncherVersion;
 
+    /**
+     * Whether to track the Sling instance process and forcibly stop it when the build ends, when it was not stopped properly.
+     */
+    @Parameter(required = true, defaultValue = "true")
+    private boolean trackProcess;
+
     // TODO: extract this field into common parent class
     /**
      * List of {@link Launch} objects to start. Each is having the following format:
@@ -337,7 +343,9 @@ public class StartMojo extends AbstractMojo {
                             + launch.getStartTimeoutSeconds() + " seconds.");
                 }
 
-                processes.startTracking(launch.getId(), process);
+                if (trackProcess) {
+                    processes.startTracking(launch.getId(), process);
+                }
             }
 
         } catch (NoSuchArchiverException
