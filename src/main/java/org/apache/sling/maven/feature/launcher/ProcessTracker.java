@@ -23,7 +23,10 @@ import javax.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.apache.maven.shared.utils.Os;
 import org.slf4j.Logger;
@@ -36,6 +39,30 @@ public class ProcessTracker {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessTracker.class);
 
     static void stop(Process process) throws InterruptedException {
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            stopWithDescendants(process, false);
+        } else {
+            stopDirectly(process, false);
+        }
+    }
+
+    static void stopForcibly(Process process) throws InterruptedException {
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            stopWithDescendants(process, true);
+        } else {
+            stopDirectly(process, true);
+        }
+    }
+
+    /**
+     * Use this for non-windows OS only by stopping the process directly, not caring about descendants.
+     */
+    private static void stopDirectly(Process process, boolean forcibly) throws InterruptedException {
+        if (forcibly) {
+            LOG.debug("Forcibly destroy process: {}", process);
+            process.destroyForcibly();
+            return;
+        }
         LOG.debug("Destroy process: {}", process);
         process.destroy();
         boolean stopped = process.waitFor(30, TimeUnit.SECONDS);
@@ -51,7 +78,7 @@ public class ProcessTracker {
      * The Launcher is started from a .bat file, and killing the known process only kills the .bat process, not the spawned java process.
      * So we try to kill all descendant processes first.
      */
-    static void stopWithDescendants(Process process) throws InterruptedException {
+    private static void stopWithDescendants(Process process, boolean forcibly) throws InterruptedException {
         LOG.debug("Destroy process with descendants: {}", process);
 
         ProcessHandle processHandle = ProcessHandle.of(process.pid()).orElse(null);
@@ -60,7 +87,12 @@ public class ProcessTracker {
             return;
         }
 
-        processHandle.descendants().forEach(childProcess -> {
+        for (ProcessHandle childProcess : processHandle.descendants().collect(Collectors.toList())) {
+            if (forcibly) {
+                LOG.debug("Forcibly destroy child process: {}", childProcess);
+                childProcess.destroyForcibly();
+                return;
+            }
             LOG.debug("Destroy child process: {}", childProcess);
             childProcess.destroy();
             try {
@@ -70,12 +102,12 @@ public class ProcessTracker {
                     childProcess.destroyForcibly();
                 }
                 LOG.debug("Destroy child process finished: {}", childProcess);
-            } catch (Exception ex) {
+            } catch (TimeoutException | ExecutionException ex) {
                 LOG.error("Error while stopping child process {}: {}", childProcess, ex.getMessage(), ex);
             }
-        });
+        }
 
-        stop(process);
+        stopDirectly(process, forcibly);
     }
 
     private final Object sync = new Object();
@@ -98,7 +130,11 @@ public class ProcessTracker {
                             LOG.error(
                                     "Launch {} was not shut down! Destroying forcibly from shutdown hook.",
                                     entry.getKey());
-                            process.destroyForcibly();
+                            try {
+                                ProcessTracker.stopForcibly(process);
+                            } catch (InterruptedException e) {
+                                interrupt();
+                            }
                         }
                     }
                 });
@@ -116,11 +152,6 @@ public class ProcessTracker {
             LOG.warn("Process not found in process list, skip stopping: {}", id);
             return;
         }
-
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            stopWithDescendants(process);
-        } else {
-            stop(process);
-        }
+        ProcessTracker.stop(process);
     }
 }
