@@ -6,7 +6,7 @@ It leverages the [Sling Feature Launcher](https://github.com/apache/sling-org-ap
 
 ## Example Usage
 
-```
+```xml
 <plugin>
     <groupId>org.apache.sling</groupId>
     <artifactId>feature-launcher-maven-plugin</artifactId>
