@@ -48,7 +48,6 @@
         <maven.version>3.8.1</maven.version>
         <project.build.outputTimestamp>1767964371</project.build.outputTimestamp>
         <github.project.id>apache/sling-feature-launcher-maven-plugin</github.project.id>
-        <version.maven-plugin-tools>3.15.2</version.maven-plugin-tools>
     </properties>
 
     <dependencies>
