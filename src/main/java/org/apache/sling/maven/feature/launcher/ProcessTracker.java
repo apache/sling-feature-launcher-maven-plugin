@@ -21,6 +21,7 @@ package org.apache.sling.maven.feature.launcher;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -114,6 +115,38 @@ public class ProcessTracker {
 
     private boolean hookAdded = false;
     private final Map<String, Process> processes = new HashMap<>();
+    private Path tempRepository;
+
+    /**
+     * Sets the path to the temporary repository containing attached artifacts.
+     *
+     * @param tempRepository the path to the temporary repository
+     */
+    public void setTempRepository(Path tempRepository) {
+        synchronized (sync) {
+            this.tempRepository = tempRepository;
+        }
+    }
+
+    /**
+     * Gets the path to the temporary repository containing attached artifacts.
+     *
+     * @return the path to the temporary repository, or null if not set
+     */
+    public Path getTempRepository() {
+        synchronized (sync) {
+            return tempRepository;
+        }
+    }
+
+    /**
+     * Clears the temporary repository reference.
+     */
+    public void clearTempRepository() {
+        synchronized (sync) {
+            this.tempRepository = null;
+        }
+    }
 
     public void startTracking(String launchId, Process process) {
         synchronized (sync) {

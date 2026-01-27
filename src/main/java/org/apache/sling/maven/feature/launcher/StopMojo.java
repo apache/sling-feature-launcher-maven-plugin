@@ -18,6 +18,12 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -92,9 +98,53 @@ public class StopMojo extends AbstractMojo {
                 getLog().info("Stopping launch with id " + launch.getId());
                 processes.stop(launch.getId());
             }
+
+            // Clean up the temporary repository
+            cleanupTempRepository();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Cleans up the temporary repository directory created by the StartMojo.
+     */
+    private void cleanupTempRepository() {
+        Path tempRepo = processes.getTempRepository();
+        if (tempRepo != null) {
+            try {
+                getLog().info("Cleaning up temporary repository at: " + tempRepo);
+                deleteDirectoryRecursively(tempRepo);
+                processes.clearTempRepository();
+            } catch (IOException e) {
+                getLog().warn("Failed to clean up temporary repository at " + tempRepo + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Recursively deletes a directory and all its contents.
+     *
+     * @param path the path to the directory to delete
+     * @throws IOException if the deletion fails
+     */
+    private void deleteDirectoryRecursively(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            return;
+        }
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     protected void waitForUserInput() throws MojoFailureException {

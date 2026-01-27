@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -158,6 +159,10 @@ public class StartMojo extends AbstractMojo {
             File workDir = new File(outputDirectory, "launchers");
             workDir.mkdirs();
 
+            // Create temp repository with attached artifacts from current build
+            Path tempRepo = createTempRepositoryWithAttachedArtifacts();
+            processes.setTempRepository(tempRepo);
+
             File launcher;
             if (useAssembly) {
                 // fetch the assembly artifact
@@ -261,17 +266,19 @@ public class StartMojo extends AbstractMojo {
                     args.add(launcher.getAbsolutePath());
                 }
 
-                List<String> repositoryUrls;
+                List<String> repositoryUrls = new ArrayList<>();
+
+                // Add temp repository with attached artifacts as first repository
+                repositoryUrls.add(tempRepo.toUri().toString());
 
                 if (launch.getRepositoryUrls() != null
                         && !launch.getRepositoryUrls().isEmpty()) {
-                    repositoryUrls = launch.getRepositoryUrls();
+                    repositoryUrls.addAll(launch.getRepositoryUrls());
                 } else {
                     // replicate the behaviour from org.apache.sling.feature.io.artifacts.ArtifactManager
                     // but pass in the currently configured local repository. The ArtifactManager checks for the local
                     // configuration file $HOME/.m2/settings.xml but cannot find out if the Maven process was invoked
                     // with a maven.repo.local argument
-                    repositoryUrls = new ArrayList<>();
                     repositoryUrls.add(
                             new File(localRepository.getBasedir()).toURI().toString());
                     repositoryUrls.add("https://repo1.maven.org/maven2");
@@ -367,12 +374,77 @@ public class StartMojo extends AbstractMojo {
         }
     }
 
-    private Artifact toArtifact(Dependency dependency) {
+    private org.eclipse.aether.artifact.Artifact toArtifact(Dependency dependency) {
         return new DefaultArtifact(
                 dependency.getGroupId(),
                 dependency.getArtifactId(),
                 dependency.getClassifier(),
                 dependency.getType(),
                 dependency.getVersion());
+    }
+
+    /**
+     * Creates a temporary directory and stores all artifacts attached to the current Maven build
+     * in that directory following the Maven2 repository layout.
+     *
+     * @return the path to the temporary repository directory
+     * @throws IOException if the directory creation or file copying fails
+     */
+    private Path createTempRepositoryWithAttachedArtifacts() throws IOException {
+        Path tempRepo = Files.createTempDirectory("feature-launcher-repo");
+        getLog().info("Created temporary repository at: " + tempRepo);
+
+        // Store the main project artifact if it has a file
+        org.apache.maven.artifact.Artifact mainArtifact = project.getArtifact();
+        if (mainArtifact != null
+                && mainArtifact.getFile() != null
+                && mainArtifact.getFile().exists()) {
+            copyArtifactToRepository(mainArtifact, tempRepo);
+        }
+
+        // Store all attached artifacts
+        for (org.apache.maven.artifact.Artifact attachedArtifact : project.getAttachedArtifacts()) {
+            if (attachedArtifact.getFile() != null && attachedArtifact.getFile().exists()) {
+                copyArtifactToRepository(attachedArtifact, tempRepo);
+            }
+        }
+
+        return tempRepo;
+    }
+
+    /**
+     * Copies an artifact to the repository following Maven2 repository layout.
+     * Layout: groupId/artifactId/version/artifactId-version[-classifier].extension
+     *
+     * @param artifact the artifact to copy
+     * @param repoPath the path to the repository root
+     * @throws IOException if the copy fails
+     */
+    private void copyArtifactToRepository(org.apache.maven.artifact.Artifact artifact, Path repoPath)
+            throws IOException {
+        // Build the path following Maven2 layout: groupId/artifactId/version/
+        String groupPath = artifact.getGroupId().replace('.', '/');
+        Path artifactDir =
+                repoPath.resolve(groupPath).resolve(artifact.getArtifactId()).resolve(artifact.getVersion());
+
+        Files.createDirectories(artifactDir);
+
+        // Build the filename: artifactId-version[-classifier].extension
+        StringBuilder filename = new StringBuilder();
+        filename.append(artifact.getArtifactId()).append("-").append(artifact.getVersion());
+        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
+            filename.append("-").append(artifact.getClassifier());
+        }
+        String extension = artifact.getType();
+        if (artifact.getArtifactHandler() != null
+                && artifact.getArtifactHandler().getExtension() != null) {
+            extension = artifact.getArtifactHandler().getExtension();
+        }
+        filename.append(".").append(extension);
+
+        Path targetFile = artifactDir.resolve(filename.toString());
+        Files.copy(artifact.getFile().toPath(), targetFile);
+
+        getLog().debug("Copied artifact " + artifact + " to " + targetFile);
     }
 }
