@@ -18,9 +18,8 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
-
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +28,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.utils.Os;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,37 +120,6 @@ public class ProcessTracker {
     private final Map<String, Process> processes = new HashMap<>();
     private Path tempRepository;
 
-    /**
-     * Sets the path to the temporary repository containing attached artifacts.
-     *
-     * @param tempRepository the path to the temporary repository
-     */
-    public void setTempRepository(Path tempRepository) {
-        synchronized (sync) {
-            this.tempRepository = tempRepository;
-        }
-    }
-
-    /**
-     * Gets the path to the temporary repository containing attached artifacts.
-     *
-     * @return the path to the temporary repository, or null if not set
-     */
-    public Path getTempRepository() {
-        synchronized (sync) {
-            return tempRepository;
-        }
-    }
-
-    /**
-     * Clears the temporary repository reference.
-     */
-    public void clearTempRepository() {
-        synchronized (sync) {
-            this.tempRepository = null;
-        }
-    }
-
     public void startTracking(String launchId, Process process) {
         synchronized (sync) {
             if (processes.containsKey(launchId))
@@ -187,4 +159,28 @@ public class ProcessTracker {
         }
         ProcessTracker.stop(process);
     }
+
+    /**
+     * Sets the path to the temporary repository containing attached artifacts.
+     * @param tempRepository the path to the temporary repository
+     */
+    public void setTempRepository(Path tempRepository) {
+        this.tempRepository = tempRepository;
+    }
+
+    /**
+     * Deletes the temporary repository with all its contents.
+     */
+    public void deleteTempRepository() {
+        if (this.tempRepository != null && Files.exists(this.tempRepository)) {
+            try {
+                LOG.info("Deleting temporary artifact repository at: {}", this.tempRepository);
+                FileUtils.deleteDirectory(this.tempRepository.toFile());
+                this.tempRepository = null;
+            } catch (IOException ex) {
+                LOG.warn("Failed to delete temporary artifact repository at {}", this.tempRepository, ex);
+            }
+        }
+    }
+
 }

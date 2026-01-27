@@ -392,7 +392,7 @@ public class StartMojo extends AbstractMojo {
      */
     private Path createTempRepositoryWithAttachedArtifacts() throws IOException {
         Path tempRepo = Files.createTempDirectory("feature-launcher-repo");
-        getLog().info("Created temporary repository at: " + tempRepo);
+        getLog().info("Created temporary artifact repository at: " + tempRepo);
 
         // Store the main project artifact if it has a file
         org.apache.maven.artifact.Artifact mainArtifact = project.getArtifact();
