@@ -34,6 +34,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
@@ -121,6 +122,15 @@ public class StartMojo extends AbstractMojo {
     @Parameter(required = true)
     private List<Launch> launches;
 
+    /**
+     * Directory to temporarily store attached artifacts of the current build in to pass them over to the launcher.
+     */
+    @Parameter(
+            defaultValue = "${project.build.directory}/featureLauncherAttachedArtifacts",
+            property = "attachedArtifactsDirectory",
+            required = true)
+    private File attachedArtifactsDirectory;
+
     @Component
     private ArtifactResolver resolver;
 
@@ -160,8 +170,7 @@ public class StartMojo extends AbstractMojo {
             workDir.mkdirs();
 
             // Create temp repository with attached artifacts from current build
-            Path tempRepo = createTempRepositoryWithAttachedArtifacts();
-            processes.setTempRepository(tempRepo);
+            createRepositoryWithAttachedArtifacts();
 
             File launcher;
             if (useAssembly) {
@@ -269,7 +278,7 @@ public class StartMojo extends AbstractMojo {
                 List<String> repositoryUrls = new ArrayList<>();
 
                 // Add temp repository with attached artifacts as first repository
-                repositoryUrls.add(tempRepo.toUri().toString());
+                repositoryUrls.add(attachedArtifactsDirectory.toURI().toString());
 
                 if (launch.getRepositoryUrls() != null
                         && !launch.getRepositoryUrls().isEmpty()) {
@@ -384,15 +393,20 @@ public class StartMojo extends AbstractMojo {
     }
 
     /**
-     * Creates a temporary directory and stores all artifacts attached to the current Maven build
+     * Creates a temporary maven repository and stores all artifacts attached to the current Maven build
      * in that directory following the Maven2 repository layout.
-     *
-     * @return the path to the temporary repository directory
      * @throws IOException if the directory creation or file copying fails
      */
-    private Path createTempRepositoryWithAttachedArtifacts() throws IOException {
-        Path tempRepo = Files.createTempDirectory("feature-launcher-repo");
-        getLog().info("Created temporary artifact repository at: " + tempRepo);
+    private void createRepositoryWithAttachedArtifacts() throws IOException {
+        Path tempRepo = attachedArtifactsDirectory.toPath();
+
+        // delete existing directory if it exists
+        if (Files.exists(tempRepo)) {
+            getLog().info("Deleting existing attached artifact repository at: " + tempRepo);
+            FileUtils.deleteDirectory(tempRepo.toFile());
+        }
+
+        getLog().info("Created attached artifact repository at: " + tempRepo);
 
         // Store the main project artifact if it has a file
         org.apache.maven.artifact.Artifact mainArtifact = project.getArtifact();
@@ -408,8 +422,6 @@ public class StartMojo extends AbstractMojo {
                 copyArtifactToRepository(attachedArtifact, tempRepo);
             }
         }
-
-        return tempRepo;
     }
 
     /**

@@ -92,9 +92,6 @@ public class StopMojo extends AbstractMojo {
                 getLog().info("Stopping launch with id " + launch.getId());
                 processes.stop(launch.getId());
             }
-
-            // Clean up the temporary repository
-            processes.deleteTempRepository();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
