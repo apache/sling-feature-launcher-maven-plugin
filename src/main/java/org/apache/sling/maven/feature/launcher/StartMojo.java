@@ -18,6 +18,8 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import javax.inject.Inject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +46,6 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -131,7 +132,7 @@ public class StartMojo extends AbstractMojo {
             required = true)
     private File attachedArtifactsDirectory;
 
-    @Component
+    @Inject
     private ArtifactResolver resolver;
 
     @Parameter(defaultValue = "${localRepository}", readonly = true)
@@ -146,13 +147,13 @@ public class StartMojo extends AbstractMojo {
     @Parameter(property = "session", readonly = true, required = true)
     protected MavenSession mavenSession;
 
-    @Component
+    @Inject
     private ProcessTracker processes;
 
     /**
      * To look up UnArchiver implementations
      */
-    @Component
+    @Inject
     private ArchiverManager archiverManager;
 
     @Override

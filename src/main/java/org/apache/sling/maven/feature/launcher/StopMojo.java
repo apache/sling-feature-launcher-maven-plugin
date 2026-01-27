@@ -18,13 +18,14 @@
  */
 package org.apache.sling.maven.feature.launcher;
 
+import javax.inject.Inject;
+
 import java.util.List;
 
 import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -58,7 +59,7 @@ public class StopMojo extends AbstractMojo {
     @Parameter(required = true)
     private List<Launch> launches;
 
-    @Component
+    @Inject
     private ProcessTracker processes;
 
     /**
@@ -67,7 +68,7 @@ public class StopMojo extends AbstractMojo {
     @Parameter(property = "feature-launcher.waitForInput", required = false, defaultValue = "false")
     protected boolean waitForInput;
 
-    @Component
+    @Inject
     private Prompter prompter;
 
     @Parameter(defaultValue = "${session.request}", readonly = true)
