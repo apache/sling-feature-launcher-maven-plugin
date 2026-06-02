@@ -112,9 +112,12 @@ public class LaunchTest {
         launch.validate();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void invalidLaunch_bothFeatureAndFeatureFile() {
+    @Test
+    public void validLaunch_bothFeatureAndFeatureFile() {
 
+        // Combining a feature (Maven coords) and a featureFile (local file path) is now
+        // allowed — they are both additive inputs to the launcher's feature aggregation,
+        // not mutually exclusive single-feature selectors.
         Launch launch = new Launch();
         launch.setId("feature");
         launch.setFeature(validDep);
@@ -128,6 +131,32 @@ public class LaunchTest {
         Launch launch = new Launch();
         launch.setId("feature");
         launch.setFeatureFile(validFeatureFile.getAbsolutePath() + ".missing");
+        launch.validate();
+    }
+
+    @Test
+    public void validLaunch_multipleFeatures() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatures(java.util.Arrays.asList(validDep, validDep));
+        launch.validate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_missingEntryInFeatureFiles() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFiles(java.util.Arrays.asList(
+                validFeatureFile.getAbsolutePath(), validFeatureFile.getAbsolutePath() + ".missing"));
+        launch.validate();
+    }
+
+    @Test
+    public void validLaunch_osgiBsnCollisionDetection() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFile(validFeatureFile.getAbsolutePath());
+        launch.setOsgiBsnCollisionDetection(true);
         launch.validate();
     }
 }
