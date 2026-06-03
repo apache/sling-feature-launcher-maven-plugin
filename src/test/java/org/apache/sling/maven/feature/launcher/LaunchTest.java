@@ -27,6 +27,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 public class LaunchTest {
 
     @Rule
@@ -54,6 +59,7 @@ public class LaunchTest {
         launch.setFeature(validDep);
         launch.setId("oak_TAR-12.1"); // covers all allowed character classes
         launch.validate();
+        assertSame(validDep, launch.getFeature().orElse(null));
     }
 
     @Test
@@ -63,6 +69,7 @@ public class LaunchTest {
         launch.setFeatureFile(validFeatureFile.getAbsolutePath());
         launch.setId("feature");
         launch.validate();
+        assertEquals(validFeatureFile, launch.getFeatureFile().orElse(null));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -112,14 +119,19 @@ public class LaunchTest {
         launch.validate();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void invalidLaunch_bothFeatureAndFeatureFile() {
+    @Test
+    public void validLaunch_bothFeatureAndFeatureFile() {
 
+        // Combining a feature (Maven coords) and a featureFile (local file path) is now
+        // allowed — they are both additive inputs to the launcher's feature aggregation,
+        // not mutually exclusive single-feature selectors.
         Launch launch = new Launch();
         launch.setId("feature");
         launch.setFeature(validDep);
         launch.setFeatureFile(validFeatureFile.getAbsolutePath());
         launch.validate();
+        assertTrue(launch.getFeature().isPresent());
+        assertTrue(launch.getFeatureFile().isPresent());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -129,5 +141,117 @@ public class LaunchTest {
         launch.setId("feature");
         launch.setFeatureFile(validFeatureFile.getAbsolutePath() + ".missing");
         launch.validate();
+    }
+
+    @Test
+    public void validLaunch_multipleFeatures() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatures(java.util.Arrays.asList(validDep, validDep));
+        launch.validate();
+        assertEquals(2, launch.getFeatures().size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_missingEntryInFeatureFiles() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFiles(java.util.Arrays.asList(
+                validFeatureFile.getAbsolutePath(), validFeatureFile.getAbsolutePath() + ".missing"));
+        launch.validate();
+    }
+
+    @Test
+    public void validLaunch_osgiBsnCollisionDetection() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFile(validFeatureFile.getAbsolutePath());
+
+        assertFalse(launch.isOsgiBsnCollisionDetection());
+        launch.setOsgiBsnCollisionDetection(true);
+        launch.validate();
+        assertTrue(launch.isOsgiBsnCollisionDetection());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_featuresEntryWithWrongType() {
+        Dependency invalidDep = validDep.clone();
+        invalidDep.setType("jar");
+
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatures(java.util.Arrays.asList(invalidDep));
+        launch.validate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidLaunch_blankEntryInFeatureFiles() {
+        Launch launch = new Launch();
+        launch.setId("feature");
+        launch.setFeatureFiles(java.util.Arrays.asList(validFeatureFile.getAbsolutePath(), "   "));
+        launch.validate();
+    }
+
+    @Test
+    public void settersAndGetters() {
+        Launch launch = new Launch();
+
+        launch.setSkip(true);
+        assertTrue(launch.isSkip());
+
+        launch.setStartTimeoutSeconds(120);
+        assertEquals(120, launch.getStartTimeoutSeconds());
+
+        launch.setArtifactClashOverrides(java.util.Arrays.asList("*:*:HIGHEST"));
+        assertEquals(1, launch.getArtifactClashOverrides().size());
+
+        launch.setRepositoryUrls(java.util.Arrays.asList("file:///tmp"));
+        assertEquals(1, launch.getRepositoryUrls().size());
+
+        LauncherArguments la = new LauncherArguments();
+        launch.setLauncherArguments(la);
+        assertSame(la, launch.getLauncherArguments());
+    }
+
+    @Test
+    public void environmentVariablesDefaultEmptyAndAccepts() {
+        Launch launch = new Launch();
+        assertTrue(launch.getEnvironmentVariables().isEmpty());
+
+        launch.setEnvironmentVariables(java.util.Collections.singletonMap("FOO", "bar"));
+        assertEquals("bar", launch.getEnvironmentVariables().get("FOO"));
+
+        // null-defensive read path.
+        launch.setEnvironmentVariables(null);
+        assertTrue(launch.getEnvironmentVariables().isEmpty());
+    }
+
+    @Test
+    public void featureFilesGetterIsNullSafe() {
+        // Default — no featureFiles configured — returns an empty list.
+        assertTrue(new Launch().getFeatureFiles().isEmpty());
+
+        // Explicit null — same defensive behaviour.
+        Launch nullCase = new Launch();
+        nullCase.setFeatureFiles(null);
+        assertTrue(nullCase.getFeatureFiles().isEmpty());
+    }
+
+    @Test
+    public void artifactClashOverridesGetterIsNullSafe() {
+        assertTrue(new Launch().getArtifactClashOverrides().isEmpty());
+
+        Launch nullCase = new Launch();
+        nullCase.setArtifactClashOverrides(null);
+        assertTrue(nullCase.getArtifactClashOverrides().isEmpty());
+    }
+
+    @Test
+    public void featuresGetterIsNullSafe() {
+        assertTrue(new Launch().getFeatures().isEmpty());
+
+        Launch nullCase = new Launch();
+        nullCase.setFeatures(null);
+        assertTrue(nullCase.getFeatures().isEmpty());
     }
 }

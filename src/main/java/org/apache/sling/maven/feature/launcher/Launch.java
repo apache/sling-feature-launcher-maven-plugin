@@ -35,7 +35,11 @@ public class Launch {
 
     private String id;
     private Dependency feature;
+    private List<Dependency> features = new ArrayList<>();
     private String featureFile;
+    private List<String> featureFiles = new ArrayList<>();
+    private boolean osgiBsnCollisionDetection;
+    private List<String> artifactClashOverrides = new ArrayList<>();
     private LauncherArguments launcherArguments = new LauncherArguments();
     private int startTimeoutSeconds = 30;
     private boolean skip = false;
@@ -64,6 +68,44 @@ public class Launch {
 
     public void setFeatureFile(String featureFile) {
         this.featureFile = featureFile;
+    }
+
+    /** Additional features (Maven coords) to aggregate alongside {@link #getFeature()}. */
+    public List<Dependency> getFeatures() {
+        return features != null ? features : Collections.emptyList();
+    }
+
+    public void setFeatures(List<Dependency> features) {
+        this.features = features;
+    }
+
+    /** Additional feature files to aggregate alongside {@link #getFeatureFile()}. */
+    public List<File> getFeatureFiles() {
+        return featureFiles == null
+                ? Collections.emptyList()
+                : featureFiles.stream().map(File::new).collect(java.util.stream.Collectors.toList());
+    }
+
+    public void setFeatureFiles(List<String> featureFiles) {
+        this.featureFiles = featureFiles;
+    }
+
+    /** @return whether to enable OSGi BSN collision detection in the launcher. Default false. */
+    public boolean isOsgiBsnCollisionDetection() {
+        return osgiBsnCollisionDetection;
+    }
+
+    public void setOsgiBsnCollisionDetection(boolean enabled) {
+        this.osgiBsnCollisionDetection = enabled;
+    }
+
+    /** Maven-coord clash overrides passed to the launcher as {@code -C} flags. */
+    public List<String> getArtifactClashOverrides() {
+        return artifactClashOverrides == null ? Collections.emptyList() : artifactClashOverrides;
+    }
+
+    public void setArtifactClashOverrides(List<String> artifactClashOverrides) {
+        this.artifactClashOverrides = artifactClashOverrides;
     }
 
     public LauncherArguments getLauncherArguments() {
@@ -118,17 +160,37 @@ public class Launch {
 
         boolean hasFeature = feature != null;
         boolean hasFeatureFile = featureFile != null && !featureFile.trim().isEmpty();
+        boolean hasFeatures = features != null && !features.isEmpty();
+        boolean hasFeatureFiles = featureFiles != null && !featureFiles.isEmpty();
 
-        if (hasFeature && hasFeatureFile)
-            throwInvalid("Only one of 'feature' and 'featureFile' is allowed, but both are set");
-
-        if (!hasFeature && !hasFeatureFile) throwInvalid("Neither 'feature' nor 'featureFile' are set");
+        if (!hasFeature && !hasFeatureFile && !hasFeatures && !hasFeatureFiles) {
+            throwInvalid("None of 'feature', 'featureFile', 'features', 'featureFiles' are set");
+        }
 
         if (hasFeatureFile && !new File(featureFile).exists())
             throwInvalid("Feature file '" + featureFile + "' does not exist");
 
         if (hasFeature && !"slingosgifeature".equals(feature.getType()))
             throwInvalid("type must be 'slingosgifeature' but is '" + feature.getType() + "'");
+
+        if (hasFeatures) {
+            for (final Dependency d : features) {
+                if (!"slingosgifeature".equals(d.getType())) {
+                    throwInvalid("features[].type must be 'slingosgifeature' but is '" + d.getType() + "'");
+                }
+            }
+        }
+
+        if (hasFeatureFiles) {
+            for (final String f : featureFiles) {
+                if (f == null || f.trim().isEmpty()) {
+                    throwInvalid("featureFiles[] entry is blank");
+                }
+                if (!new File(f).exists()) {
+                    throwInvalid("Feature file '" + f + "' does not exist");
+                }
+            }
+        }
     }
 
     private void throwInvalid(String reason) {

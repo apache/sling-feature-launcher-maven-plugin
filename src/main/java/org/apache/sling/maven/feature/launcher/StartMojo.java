@@ -81,7 +81,7 @@ public class StartMojo extends AbstractMojo {
     /**
      * The version of the <a href="https://github.com/apache/sling-org-apache-sling-feature-launcher">Sling Feature Launcher</a> to use.
      */
-    @Parameter(required = true, defaultValue = "1.3.4")
+    @Parameter(required = true, defaultValue = "1.3.6")
     private String featureLauncherVersion;
 
     /**
@@ -215,12 +215,23 @@ public class StartMojo extends AbstractMojo {
 
                 launch.validate();
 
-                File featureFile = launch.getFeature()
+                // Aggregate every primary + additional feature into a single ordered list
+                // of files to pass to the launcher CLI as separate `-f` flags. Order
+                // matters: it determines which feature wins under FIRST_WINS / LAST_WINS
+                // and how merge handlers see the input.
+                final List<File> featureFiles = new ArrayList<>();
+                launch.getFeature()
                         .map(this::toArtifact)
                         .map(a -> uncheckedResolveArtifact(repositorySession, a))
                         .map(r -> r.getArtifact().getFile())
-                        .orElseGet(() -> launch.getFeatureFile()
-                                .get()); // the Launch is guaranteed to either have a feature or a featureFile set
+                        .ifPresent(featureFiles::add);
+                launch.getFeatureFile().ifPresent(featureFiles::add);
+                for (org.apache.maven.model.Dependency d : launch.getFeatures()) {
+                    featureFiles.add(uncheckedResolveArtifact(repositorySession, toArtifact(d))
+                            .getArtifact()
+                            .getFile());
+                }
+                featureFiles.addAll(launch.getFeatureFiles());
 
                 String javahome = System.getenv(JAVA_HOME);
                 if (javahome == null || javahome.isEmpty()) {
@@ -300,10 +311,21 @@ public class StartMojo extends AbstractMojo {
                 repositoryUrls.forEach(joiner::add);
                 args.add(joiner.toString());
 
-                args.add("-f");
-                args.add(featureFile.getAbsolutePath());
+                for (File f : featureFiles) {
+                    args.add("-f");
+                    args.add(f.getAbsolutePath());
+                }
                 args.add("-p");
                 args.add(launch.getId());
+
+                if (launch.isOsgiBsnCollisionDetection()) {
+                    args.add("--osgi-bsn-collision-detection");
+                }
+
+                for (String override : launch.getArtifactClashOverrides()) {
+                    args.add("-C");
+                    args.add(override);
+                }
 
                 for (Map.Entry<String, String> frameworkProperty :
                         launch.getLauncherArguments().getFrameworkProperties().entrySet()) {
